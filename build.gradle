@@ -1,0 +1,52 @@
+
+plugins {
+    id 'java'
+    id 'application'
+	id 'com.github.johnrengelman.shadow' version '5.0.0'
+    id 'pl.allegro.tech.build.axion-release' version '1.10.1'
+
+}
+group 'com.github.minecraft-saar'
+description 'simple-architect'
+
+scmVersion {
+    tag {
+        prefix = 'release'
+    }
+}
+
+version = scmVersion.version
+
+sourceCompatibility = 1.11
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {url 'http://www.ling.uni-potsdam.de/tcl/maven2/external'}
+    maven {url 'http://www.ling.uni-potsdam.de/tcl/maven2/releases'}
+	maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/minecraft-saar/minecraft-nlg")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
+            password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
+        }
+    }
+	maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/minecraft-saar/jshop")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
+            password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
+        }
+    }
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+	compile 'de.saar.minecraft:minecraft-nlg:1.0.0'
+	compile group: "com.github.minecraft-saar", name:"infrastructure", version:"643c7df8"
+}
+
+mainClassName = 'de.saar.minecraft.simplearchitect.Main'
