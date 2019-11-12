@@ -151,7 +151,7 @@ public class SimpleArchitect implements Architect {
         return "SimpleArchitect";
     }
 
-    private String generateResponse() {
+    public String generateResponse() {
         var response = "";
         var target = plan.get(0);
         var relations = Relation.generateAllRelationsBetweeen(
@@ -163,7 +163,8 @@ public class SimpleArchitect implements Architect {
             relations.add(new Relation("it", lastBlock));
         }
         try {
-            response = realizer.generateStatement("put", target, "");
+            realizer.setRelations(relations);
+            response = realizer.generateStatement("put", target, "type");
         } catch (ParserException e) {
             e.printStackTrace();
         }
