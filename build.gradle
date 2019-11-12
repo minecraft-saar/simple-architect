@@ -48,6 +48,7 @@ dependencies {
 	compile 'de.saar.minecraft:minecraft-nlg:1.0.1-SNAPSHOT'
 	compile group: "de.saar.minecraft", name:"networking", version:"0.1.0-SNAPSHOT"
     compile group: "de.saar.minecraft", name:"architect", version:"0.1.0-SNAPSHOT"
+    compile 'de.saar.minecraft:jshop:0.1.0-SNAPSHOT'
 }
 
 mainClassName = 'de.saar.minecraft.simplearchitect.Main'
