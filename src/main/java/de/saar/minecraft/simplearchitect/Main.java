@@ -1,10 +1,19 @@
 package de.saar.minecraft.simplearchitect;
 
 
-public class Main implements Runnable {
-  public void run() {
-  }
+import de.saar.minecraft.architect.ArchitectFactory;
+import de.saar.minecraft.architect.ArchitectServer;
 
-  public static void main(String[] args) {
+import java.io.IOException;
+
+public class Main {
+    /**
+     * Starts an architect server.
+     */
+    public static void main(String[] args) throws IOException, InterruptedException {
+        ArchitectFactory factory = () -> new SimpleArchitect();
+        ArchitectServer server = new ArchitectServer(10000, factory);
+        server.start();
+        server.blockUntilShutdown();
     }
   }
