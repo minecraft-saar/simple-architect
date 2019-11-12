@@ -98,6 +98,7 @@ public class SimpleArchitect implements Architect {
                             && currBlock.zpos == z) {
                         response = generateResponse();
                         // make the block respond to "it"
+                        world.add(currBlock);
                         lastBlock = currBlock;
                         plan.remove(0);
                     } else {
