@@ -62,9 +62,11 @@ public class SimpleArchitect implements Architect {
         JSTaskAtom t;
         for (short i = 0; i < jshopPlan.size(); i++) {
             t = (JSTaskAtom) jshopPlan.elementAt(i);
-            int x = (int) t.elementAt(2);
-            int y = (int) t.elementAt(3);
-            int z = (int) t.elementAt(4);
+            String task = t.toStr().toString();
+            String[] taskArray = task.split(" ");
+            int x = (int) Double.parseDouble(taskArray[1]);
+            int y = (int) Double.parseDouble(taskArray[2]);
+            int z = (int) Double.parseDouble(taskArray[2]);
             this.plan.add(new Block(x,y,z));
         }
     }
