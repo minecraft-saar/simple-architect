@@ -26,20 +26,12 @@ repositories {
     maven {url 'http://www.ling.uni-potsdam.de/tcl/maven2/releases'}
 	maven {
         name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/minecraft-saar/minecraft-nlg")
+        url = uri("https://maven.pkg.github.com/minecraft-saar/simple-architect")
         credentials {
             username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
             password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
         }
     }
-	// maven {
-    //     name = "GitHubPackages"
-    //     url = uri("https://maven.pkg.github.com/minecraft-saar/jshop")
-    //     credentials {
-    //         username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
-    //         password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
-    //     }
-    // }
     maven { url 'https://jitpack.io' }
 }
 
