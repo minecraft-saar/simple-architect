@@ -32,14 +32,6 @@ repositories {
             password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
         }
     }
-	// maven {
-    //     name = "GitHubPackages"
-    //     url = uri("https://maven.pkg.github.com/minecraft-saar/jshop")
-    //     credentials {
-    //         username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
-    //         password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
-    //     }
-    // }
     maven { url 'https://jitpack.io' }
 }
 
