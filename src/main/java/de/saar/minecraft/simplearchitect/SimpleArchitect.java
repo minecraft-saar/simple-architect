@@ -43,11 +43,8 @@ public class SimpleArchitect implements Architect {
         this.realizer = MinecraftRealizer.createRealizer();
         this.plan = new ArrayList<>();
         world = new HashSet<>();
-        world.add(new UniqueBlock("blue", 3, 3, 3));
+        world.add(new UniqueBlock("blue", 0, 2, 0));
         transformPlan(jshopPlan);
-        //for (int i=4; i<10; i++) {
-        //    plan.add(new Block(i,3,3));
-        //}
     }
 
     public SimpleArchitect() {
