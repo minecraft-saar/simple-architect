@@ -36,7 +36,8 @@ public class SimpleArchitect implements Architect {
         int mctsruns = 10000; //number of runs the planer tries to do
         int timeout = 10000; //time the planer runs in ms
         JSJshop planer = new JSJshop();
-        JSPlan jshopPlan = planer.nlgSearch(mctsruns,timeout);
+        var initialworld = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/worlds/artengis.csv");
+        JSPlan jshopPlan = planer.nlgSearch(mctsruns,timeout, initialworld);
 
 
         this.waitTime = waitTime;
@@ -64,7 +65,7 @@ public class SimpleArchitect implements Architect {
             String[] taskArray = task.split(" ");
             int x = (int) Double.parseDouble(taskArray[1]);
             int y = (int) Double.parseDouble(taskArray[2]);
-            int z = (int) Double.parseDouble(taskArray[2]);
+            int z = (int) Double.parseDouble(taskArray[3]);
             this.plan.add(new Block(x,y,z));
         }
     }
