@@ -134,19 +134,16 @@ public class SimpleArchitect implements Architect {
         new Thread() {
             @Override
             public void run() {
-                String text = "your x was " + x;
-                TextMessage mText = TextMessage.newBuilder().setGameId(gameId).setText(text).build();
-
+                TextMessage mText = TextMessage.newBuilder().setGameId(gameId).setText(currentInstruction).build();
+                // send the text message back to the client
+                responseObserver.onNext(mText);
+                responseObserver.onCompleted();
                 // delay for a bit
                 try {
                     Thread.sleep(waitTime);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
-                // send the text message back to the client
-                responseObserver.onNext(mText);
-                responseObserver.onCompleted();
             }
         }.start();
     }
