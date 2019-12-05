@@ -31,6 +31,7 @@ public class SimpleArchitect implements Architect {
     private int waitTime;
     private MinecraftRealizer realizer;
     private AtomicInteger numInstructions = new AtomicInteger(0);
+    private String currentInstruction;
   
     public SimpleArchitect(int waitTime) {
         int mctsruns = 10000; //number of runs the planer tries to do
@@ -46,9 +47,7 @@ public class SimpleArchitect implements Architect {
         world = new HashSet<>();
         world.add(new UniqueBlock("blue", 3, 3, 3));
         transformPlan(jshopPlan);
-        //for (int i=4; i<10; i++) {
-        //    plan.add(new Block(i,3,3));
-        //}
+        currentInstruction = generateResponse();
     }
 
     public SimpleArchitect() {
@@ -98,11 +97,12 @@ public class SimpleArchitect implements Architect {
                     if (currBlock.xpos == x
                             // && currBlock.ypos == y
                             && currBlock.zpos == z) {
-                        response = generateResponse();
+                        response = currentInstruction;
                         // make the block respond to "it"
                         world.add(currBlock);
                         lastBlock = currBlock;
                         plan.remove(0);
+                        currentInstruction = generateResponse();
                     } else {
                         response = String.format("you put a block on (%d, %d, %d) but we wanted a block on (%d, %d, %d)",
                                 x, y, z,
@@ -129,7 +129,7 @@ public class SimpleArchitect implements Architect {
     public void handleStatusInformation(StatusMessage request, StreamObserver<TextMessage> responseObserver) {
         int x = request.getX();
         int gameId = request.getGameId();
-
+        
         // spawn a thread for a long-running computation
         new Thread() {
             @Override
