@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class SimpleArchitect implements Architect {
     Block lastBlock;
@@ -31,6 +32,7 @@ public class SimpleArchitect implements Architect {
     private int waitTime;
     private MinecraftRealizer realizer;
     private AtomicInteger numInstructions = new AtomicInteger(0);
+    private AtomicLong lastUpdate = new AtomicLong(0);
     private String currentInstruction;
   
     public SimpleArchitect(int waitTime) {
@@ -87,6 +89,7 @@ public class SimpleArchitect implements Architect {
                     // our information is outdated, so skip this one
                     return;
                 }
+                lastUpdate.set(java.lang.System.currentTimeMillis());
                 int x = request.getX();
                 int y = request.getY();
                 int z = request.getZ();
@@ -97,12 +100,12 @@ public class SimpleArchitect implements Architect {
                     if (currBlock.xpos == x
                             // && currBlock.ypos == y
                             && currBlock.zpos == z) {
-                        response = currentInstruction;
                         // make the block respond to "it"
                         world.add(currBlock);
                         lastBlock = currBlock;
                         plan.remove(0);
                         currentInstruction = generateResponse();
+                        response = "Great! now " + currentInstruction;
                     } else {
                         response = String.format("you put a block on (%d, %d, %d) but we wanted a block on (%d, %d, %d)",
                                 x, y, z,
@@ -127,6 +130,10 @@ public class SimpleArchitect implements Architect {
 
     @Override
     public void handleStatusInformation(StatusMessage request, StreamObserver<TextMessage> responseObserver) {
+        // only re-send the current instruction after five seconds.
+        if (lastUpdate.get() > java.lang.System.currentTimeMillis() + 5000) {
+            return;
+        }
         int x = request.getX();
         int gameId = request.getGameId();
         
@@ -138,12 +145,6 @@ public class SimpleArchitect implements Architect {
                 // send the text message back to the client
                 responseObserver.onNext(mText);
                 responseObserver.onCompleted();
-                // delay for a bit
-                try {
-                    Thread.sleep(waitTime);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
         }.start();
     }
