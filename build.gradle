@@ -40,8 +40,8 @@ dependencies {
     compile 'de.saar.minecraft:minecraft-nlg:1.1.0'
     compile group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.1.4"
     compile group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.1.4"
-    compile 'de.saar.minecraft:jshop:1.1.5'
-    runtimeOnly 'de.saar.minecraft:shared-resources:1.1.1'
+    compile 'de.saar.minecraft:jshop:1.1.8'
+    runtimeOnly 'de.saar.minecraft:shared-resources:1.1.3'
 }
 
 mainClassName = 'de.saar.minecraft.simplearchitect.Main'

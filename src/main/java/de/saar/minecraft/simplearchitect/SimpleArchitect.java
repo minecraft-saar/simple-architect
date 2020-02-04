@@ -40,7 +40,12 @@ public class SimpleArchitect implements Architect {
         int timeout = 10000; //time the planer runs in ms
         JSJshop planer = new JSJshop();
         var initialworld = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/worlds/artengis.csv");
-        JSPlan jshopPlan = planer.nlgSearch(mctsruns,timeout, initialworld);
+        var domain = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/domains/house-block.lisp");
+        // String bridge = "build-bridge x y z width length height"
+        // for simple bridge height is height of banister, for bridge fancy height of arch
+        // String house = "build-house x y z width length height"
+        String problem = "build-house 3 2 3 4 4 3";
+        JSPlan jshopPlan = planer.nlgSearch(mctsruns,timeout, initialworld, problem, domain);
 
 
         this.waitTime = waitTime;
