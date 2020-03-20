@@ -15,6 +15,9 @@ import de.saar.minecraft.shared.WorldSelectMessage;
 import de.up.ling.irtg.algebra.ParserException;
 import io.grpc.stub.StreamObserver;
 import umd.cs.shop.JSJshop;
+import umd.cs.shop.JSState;
+import umd.cs.shop.JSPredicateForm;
+import umd.cs.shop.JSTerm;
 import umd.cs.shop.JSPlan;
 import umd.cs.shop.JSTaskAtom;
 
@@ -51,8 +54,9 @@ public class SimpleArchitect implements Architect {
         this.waitTime = waitTime;
         this.realizer = MinecraftRealizer.createRealizer();
         this.plan = new ArrayList<>();
-        world = new HashSet<>();
-        world.add(new UniqueBlock("blue", 3, 3, 3));
+        //world = new HashSet<>();
+        //world.add(new UniqueBlock("blue", 3, 3, 3));
+        world = transformState(planer.prob.state());
         transformPlan(jshopPlan);
         currentInstruction = generateResponse();
     }
@@ -77,6 +81,28 @@ public class SimpleArchitect implements Architect {
             int z = (int) Double.parseDouble(taskArray[3]);
             this.plan.add(new Block(x,y,z));
         }
+    }
+
+    public HashSet transformState(JSState state){
+        HashSet<UniqueBlock> set = new HashSet();
+        for(JSPredicateForm term : state.atoms()){
+            String name = (String) term.elementAt(0);
+            if(!name.equals("block-at")){
+                //System.out.println("Not a block: " + term.toString());
+                continue;
+            }
+            JSTerm data = (JSTerm) term.elementAt(1);
+            String type = (String) data.elementAt(0);
+            JSTerm tmp = (JSTerm) term.elementAt(2);
+            int x = (int) Double.parseDouble(tmp.toStr().toString());
+            tmp = (JSTerm) term.elementAt(3);
+            int y = (int) Double.parseDouble(tmp.toStr().toString());;
+            tmp = (JSTerm) term.elementAt(4);
+            int z = (int) Double.parseDouble(tmp.toStr().toString());;
+            //System.out.println("Block: " + type + " " + x + " " + y + " "+ z);
+            set.add(new UniqueBlock(type, x, y, z));
+        }
+        return set;
     }
 
     @Override
