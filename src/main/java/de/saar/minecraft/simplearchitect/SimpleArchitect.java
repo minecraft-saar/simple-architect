@@ -5,8 +5,9 @@ import de.saar.coli.minecraft.MinecraftRealizer;
 import de.saar.coli.minecraft.relationextractor.Block;
 import de.saar.coli.minecraft.relationextractor.MinecraftObject;
 import de.saar.coli.minecraft.relationextractor.Relation;
+import de.saar.coli.minecraft.relationextractor.Relation.Orientation;
 import de.saar.coli.minecraft.relationextractor.UniqueBlock;
-import de.saar.minecraft.architect.Architect;
+import de.saar.minecraft.architect.AbstractArchitect;
 import de.saar.minecraft.shared.BlockDestroyedMessage;
 import de.saar.minecraft.shared.BlockPlacedMessage;
 import de.saar.minecraft.shared.StatusMessage;
@@ -28,15 +29,17 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SimpleArchitect implements Architect {
-    StreamObserver<TextMessage> messageChannel;
-    Block lastBlock;
+import static java.lang.Math.abs;
+
+public class SimpleArchitect extends AbstractArchitect {
+    private Block lastBlock;
     private List<Block> plan;
     private Set<MinecraftObject> world;
     private MinecraftRealizer realizer;
     private AtomicInteger numInstructions = new AtomicInteger(0);
     private AtomicLong lastUpdate = new AtomicLong(0);
     private String currentInstruction;
+    private Orientation lastOrientation = Orientation.ZPLUS;
   
     public SimpleArchitect(int waitTime) {
         int mctsruns = 10000; //number of runs the planner tries to do
@@ -65,18 +68,9 @@ public class SimpleArchitect implements Architect {
 
     @Override
     public void initialize(WorldSelectMessage message) {
-      
+        setGameId(message.getGameId());
     }
 
-    @Override
-    public void shutdown() {
-        messageChannel.onCompleted();
-    }
-
-    @Override
-    public void setMessageChannel(StreamObserver<TextMessage> messageChannel) {
-        this.messageChannel = messageChannel;
-    }
 
     public void transformPlan(JSPlan jshopPlan){
         JSTaskAtom t;
@@ -171,17 +165,38 @@ public class SimpleArchitect implements Architect {
 
     @Override
     public void handleStatusInformation(StatusMessage request) {
+        var x = request.getX();
+        var z = request.getZ();
+        Orientation newOrientation;
+        if (abs(x) > abs(z)) {
+            // User looks along X-axis
+            if (x>0) {
+                newOrientation = Orientation.XPLUS;
+            } else {
+                newOrientation = Orientation.XMINUS;
+            }
+        } else {
+            // looking along Z axis
+            if (z>0) {
+                newOrientation = Orientation.ZPLUS;
+            } else {
+                newOrientation = Orientation.ZMINUS;
+            }
+        }
+
+        boolean orientationStayed = newOrientation == lastOrientation;
+        lastOrientation = newOrientation;
+
         // only re-send the current instruction after five seconds.
-        if (lastUpdate.get() > java.lang.System.currentTimeMillis() + 5000) {
+        if (orientationStayed && lastUpdate.get() > java.lang.System.currentTimeMillis() + 5000) {
             return;
         }
-        int x = request.getX();
-        int gameId = request.getGameId();
-        
-        TextMessage mText = TextMessage.newBuilder().setGameId(gameId).setText(currentInstruction).build();
-        // send the text message back to the client
-        messageChannel.onNext(mText);
+        if (!orientationStayed) {
+            currentInstruction = generateResponse();
+        }
+        sendMessage(currentInstruction);
     }
+
 
     @Override
     public String getArchitectInformation() {
@@ -194,7 +209,8 @@ public class SimpleArchitect implements Architect {
         var relations = Relation.generateAllRelationsBetweeen(
                 Iterables.concat(world,
                         org.eclipse.collections.impl.factory.Iterables.iList(target)
-                )
+                ),
+                lastOrientation
         );
         if (lastBlock != null) {
             relations.add(new Relation("it", lastBlock));
