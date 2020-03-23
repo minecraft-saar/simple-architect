@@ -15,6 +15,8 @@ import de.saar.minecraft.shared.TextMessage;
 import de.saar.minecraft.shared.WorldSelectMessage;
 import de.up.ling.irtg.algebra.ParserException;
 import io.grpc.stub.StreamObserver;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import umd.cs.shop.JSJshop;
 import umd.cs.shop.JSState;
 import umd.cs.shop.JSPredicateForm;
@@ -32,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static java.lang.Math.abs;
 
 public class SimpleArchitect extends AbstractArchitect {
+    private static Logger logger = LogManager.getLogger(SimpleArchitect.class);
     private Block lastBlock;
     private List<Block> plan;
     private Set<MinecraftObject> world;
@@ -166,8 +169,8 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public void handleStatusInformation(StatusMessage request) {
-        var x = request.getX();
-        var z = request.getZ();
+        var x = request.getXDirection();
+        var z = request.getZDirection();
         Orientation newOrientation;
         if (abs(x) > abs(z)) {
             // User looks along X-axis
@@ -189,12 +192,13 @@ public class SimpleArchitect extends AbstractArchitect {
         lastOrientation = newOrientation;
 
         // only re-send the current instruction after five seconds.
-        if (orientationStayed && lastUpdate.get() > java.lang.System.currentTimeMillis() + 5000) {
+        if (orientationStayed && lastUpdate.get() + 5000 > java.lang.System.currentTimeMillis()) {
             return;
         }
         if (!orientationStayed) {
             currentInstruction = generateResponse();
         }
+        lastUpdate.set(java.lang.System.currentTimeMillis());
         sendMessage(currentInstruction);
     }
 
