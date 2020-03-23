@@ -44,7 +44,8 @@ public class SimpleArchitect implements Architect {
         JSJshop planer = new JSJshop();
         var initialworld = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/worlds/artengis.csv");
         var domain = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/domains/house-block.lisp");
-        // String bridge = "build-bridge x y z width length height"
+        // String bridgeFancy = "build-bridge 3 2 1 4 3 3";
+        //String bridgeSimple= "build-bridge 3 2 1 3 5 2";
         // for simple bridge height is height of banister, for bridge fancy height of arch
         // String house = "build-house x y z width length height"
         String problem = "build-house 3 2 3 4 4 3";
