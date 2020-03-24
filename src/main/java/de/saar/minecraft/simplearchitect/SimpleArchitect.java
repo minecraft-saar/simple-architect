@@ -43,12 +43,13 @@ public class SimpleArchitect extends AbstractArchitect {
     private AtomicLong lastUpdate = new AtomicLong(0);
     private String currentInstruction;
     private Orientation lastOrientation = Orientation.ZPLUS;
+    private String scenario;
   
     public SimpleArchitect(int waitTime) {
         int mctsruns = 10000; //number of runs the planner tries to do
         int timeout = 10000; //time the planner runs in ms
         JSJshop planner = new JSJshop();
-        var initialworld = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/worlds/artengis.csv");
+        var initialworld = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/worlds/house.csv");
         var domain = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/domains/house-block.lisp");
         // String bridgeFancy = "build-bridge 3 2 1 4 3 3";
         //String bridgeSimple= "build-bridge 3 2 1 3 5 2";
@@ -73,8 +74,14 @@ public class SimpleArchitect extends AbstractArchitect {
     @Override
     public void initialize(WorldSelectMessage message) {
         setGameId(message.getGameId());
+        scenario = message.getName();
     }
 
+    @Override
+    public void setMessageChannel(StreamObserver<TextMessage> messageChannel) {
+        super.setMessageChannel(messageChannel);
+        sendMessage("Welcome! I will try to instruct you to build a " + scenario);
+    }
 
     public void transformPlan(JSPlan jshopPlan){
         JSTaskAtom t;
@@ -89,8 +96,8 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
-    public HashSet transformState(JSState state){
-        HashSet<UniqueBlock> set = new HashSet();
+    public HashSet<MinecraftObject> transformState(JSState state){
+        HashSet<MinecraftObject> set = new HashSet();
         for(JSPredicateForm term : state.atoms()){
             String name = (String) term.elementAt(0);
             if(!name.equals("block-at")){
@@ -159,6 +166,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public void handleBlockDestroyed(BlockDestroyedMessage request) {
+        // TODO add logic to only say this if the previous block was correct
         int gameId = request.getGameId();
         messageChannel.onNext(TextMessage
                 .newBuilder()
@@ -209,6 +217,9 @@ public class SimpleArchitect extends AbstractArchitect {
     }
 
     public String generateResponse() {
+        if (plan.isEmpty()) {
+            return "Congratulations, you are done building a " + "";
+        }
         var response = "";
         var target = plan.get(0);
         var relations = Relation.generateAllRelationsBetweeen(
