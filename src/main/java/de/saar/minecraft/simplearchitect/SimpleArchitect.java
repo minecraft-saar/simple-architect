@@ -23,6 +23,7 @@ import umd.cs.shop.JSPredicateForm;
 import umd.cs.shop.JSTerm;
 import umd.cs.shop.JSPlan;
 import umd.cs.shop.JSTaskAtom;
+import umd.cs.shop.CostFunction;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -44,19 +45,26 @@ public class SimpleArchitect extends AbstractArchitect {
     private String currentInstruction;
     private Orientation lastOrientation = Orientation.ZPLUS;
     private String scenario;
-  
+
+    //enum InstructionLevel{
+    //    BLOCK,
+    //    MEDIUM,
+    //    HIGHLEVEL
+    //}
+
     public SimpleArchitect(int waitTime) {
         int mctsruns = 10000; //number of runs the planner tries to do
         int timeout = 10000; //time the planner runs in ms
         JSJshop planner = new JSJshop();
         var initialworld = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/worlds/house.csv");
         var domain = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/domains/house-block.lisp");
-        // String bridgeFancy = "build-bridge 3 2 1 4 3 3";
-        //String bridgeSimple= "build-bridge 3 2 1 3 5 2";
+        // String bridgeFancy = "build-bridge 3 66 1 4 3 3";
+        //String bridgeSimple= "build-bridge 3 66 1 3 5 2";
         // for simple bridge height is height of banister, for bridge fancy height of arch
         // String house = "build-house x y z width length height"
-        String problem = "build-house 3 2 3 4 4 3";
-        JSPlan jshopPlan = planner.nlgSearch(mctsruns,timeout, initialworld, problem, domain);
+        String problem = "build-house 3 66 3 4 4 3";
+        CostFunction.InstructionLevel level = CostFunction.InstructionLevel.BLOCK;
+        JSPlan jshopPlan = planner.nlgSearch(mctsruns,timeout, initialworld, problem, domain, level);
 
         this.realizer = MinecraftRealizer.createRealizer();
         this.plan = new ArrayList<>();
