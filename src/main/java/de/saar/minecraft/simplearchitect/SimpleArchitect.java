@@ -145,7 +145,7 @@ public class SimpleArchitect extends AbstractArchitect {
             int z = request.getZ();
             String response = "";
             if (plan.isEmpty()) {
-                response = "you are done, no more changes neeeded!";
+                response = "you are done, no more changes needed!";
                 // textMessageBuilder.set
             } else {
                 var currBlock = plan.get(0);
@@ -226,7 +226,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
     public String generateResponse() {
         if (plan.isEmpty()) {
-            return "Congratulations, you are done building a " + "";
+            return "Congratulations, you are done building a " + scenario;
         }
         var response = "";
         var target = plan.get(0);
