@@ -10,6 +10,7 @@ import de.saar.coli.minecraft.relationextractor.UniqueBlock;
 import de.saar.minecraft.architect.AbstractArchitect;
 import de.saar.minecraft.shared.BlockDestroyedMessage;
 import de.saar.minecraft.shared.BlockPlacedMessage;
+import de.saar.minecraft.shared.NewGameState;
 import de.saar.minecraft.shared.StatusMessage;
 import de.saar.minecraft.shared.TextMessage;
 import de.saar.minecraft.shared.WorldSelectMessage;
@@ -23,7 +24,7 @@ import umd.cs.shop.JSPredicateForm;
 import umd.cs.shop.JSTerm;
 import umd.cs.shop.JSPlan;
 import umd.cs.shop.JSTaskAtom;
-import umd.cs.shop.CostFunction;
+import umd.cs.shop.costs.CostFunction;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -132,6 +133,7 @@ public class SimpleArchitect extends AbstractArchitect {
         int gameId = request.getGameId();
         int currNumInstructions = numInstructions.incrementAndGet();
         var textMessageBuilder = TextMessage.newBuilder().setGameId(gameId);
+        boolean isFinished = false;
 
         synchronized (realizer) {
             if (currNumInstructions < numInstructions.get()) {
@@ -146,7 +148,7 @@ public class SimpleArchitect extends AbstractArchitect {
             String response = "";
             if (plan.isEmpty()) {
                 response = "you are done, no more changes needed!";
-                // textMessageBuilder.set
+                isFinished = true;
             } else {
                 var currBlock = plan.get(0);
                 if (currBlock.xpos == x
@@ -165,22 +167,18 @@ public class SimpleArchitect extends AbstractArchitect {
                 }
             }
             assert !response.equals("");
-            textMessageBuilder.setText(response);
-            TextMessage mText = textMessageBuilder.build();
-            // send the text message back to the client
-            messageChannel.onNext(mText);
+            if (isFinished) {
+                sendMessage(response, NewGameState.SuccessfullyFinished);
+            } else {
+                sendMessage(response);
+            }
         }
     }
 
     @Override
     public void handleBlockDestroyed(BlockDestroyedMessage request) {
         // TODO add logic to only say this if the previous block was correct
-        int gameId = request.getGameId();
-        messageChannel.onNext(TextMessage
-                .newBuilder()
-                .setGameId(gameId)
-                .setText("Please add this block again :-(")
-                .build());
+        sendMessage("Please add this block again.");
     }
 
     @Override
