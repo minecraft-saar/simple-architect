@@ -129,11 +129,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public void handleBlockPlaced(BlockPlacedMessage request) {
-        int type = request.getType();
-        int gameId = request.getGameId();
         int currNumInstructions = numInstructions.incrementAndGet();
-        var textMessageBuilder = TextMessage.newBuilder().setGameId(gameId);
-        boolean isFinished = false;
 
         synchronized (realizer) {
             if (currNumInstructions < numInstructions.get()) {
@@ -148,7 +144,6 @@ public class SimpleArchitect extends AbstractArchitect {
             String response = "";
             if (plan.isEmpty()) {
                 response = "you are done, no more changes needed!";
-                isFinished = true;
             } else {
                 var currBlock = plan.get(0);
                 if (currBlock.xpos == x
@@ -167,7 +162,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 }
             }
             assert !response.equals("");
-            if (isFinished) {
+            if (plan.isEmpty()) {
                 sendMessage(response, NewGameState.SuccessfullyFinished);
             } else {
                 sendMessage(response);
