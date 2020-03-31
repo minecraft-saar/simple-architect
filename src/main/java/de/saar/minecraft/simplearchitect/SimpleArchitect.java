@@ -63,7 +63,7 @@ public class SimpleArchitect extends AbstractArchitect {
         //String bridgeSimple= "build-bridge 3 66 1 3 5 2";
         // for simple bridge height is height of banister, for bridge fancy height of arch
         // String house = "build-house x y z width length height"
-        String problem = "build-house 3 66 3 4 4 3";
+        String problem = "build-house 3 66 3 4 4 2";
         CostFunction.InstructionLevel level = CostFunction.InstructionLevel.BLOCK;
         JSPlan jshopPlan = planner.nlgSearch(mctsruns,timeout, initialworld, problem, domain, level);
 
