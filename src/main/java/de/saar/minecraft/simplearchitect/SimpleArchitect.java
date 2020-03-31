@@ -26,12 +26,16 @@ import umd.cs.shop.JSPlan;
 import umd.cs.shop.JSTaskAtom;
 import umd.cs.shop.costs.CostFunction;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.abs;
 
@@ -53,37 +57,49 @@ public class SimpleArchitect extends AbstractArchitect {
     //    HIGHLEVEL
     //}
 
-    public SimpleArchitect(int waitTime) {
+    public SimpleArchitect() {
+
+    }
+
+    private static InputStream getResourceStream(String resName) {
+        return SimpleArchitect.class.getResourceAsStream(resName);
+    }
+
+    private static String getResourceAsString(String resName) {
+        return new BufferedReader(new InputStreamReader(getResourceStream(resName)))
+            .lines()
+            .collect(Collectors.joining("\n"));
+    }
+
+    private JSPlan createPlan(JSJshop planner, String screnario) {
         int mctsruns = 10000; //number of runs the planner tries to do
         int timeout = 10000; //time the planner runs in ms
-        JSJshop planner = new JSJshop();
-        var initialworld = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/worlds/house.csv");
-        var domain = SimpleArchitect.class.getResourceAsStream("/de/saar/minecraft/domains/house-block.lisp");
+
+        var initialworld = getResourceStream("/de/saar/minecraft/worlds/"+scenario+".csv");
+        var domain = getResourceStream("/de/saar/minecraft/domains/"+scenario+"-block.lisp");
         // String bridgeFancy = "build-bridge 3 66 1 4 3 3";
         //String bridgeSimple= "build-bridge 3 66 1 3 5 2";
         // for simple bridge height is height of banister, for bridge fancy height of arch
         // String house = "build-house x y z width length height"
-        String problem = "build-house 3 66 3 4 4 2";
+        String problem = getResourceAsString("/de/saar/minecraft/domains/"+scenario+"-block.init").strip();
         CostFunction.InstructionLevel level = CostFunction.InstructionLevel.BLOCK;
-        JSPlan jshopPlan = planner.nlgSearch(mctsruns,timeout, initialworld, problem, domain, level);
-
-        this.realizer = MinecraftRealizer.createRealizer();
-        this.plan = new ArrayList<>();
-        //world = new HashSet<>();
-        //world.add(new UniqueBlock("blue", 3, 3, 3));
-        world = transformState(planner.prob.state());
-        transformPlan(jshopPlan);
-        currentInstruction = generateResponse();
-    }
-
-    public SimpleArchitect() {
-        this(1000);
-    }
+        return planner.nlgSearch(mctsruns,timeout, initialworld, problem, domain, level);
+    }  
 
     @Override
     public void initialize(WorldSelectMessage message) {
         setGameId(message.getGameId());
         scenario = message.getName();
+        this.plan = computePlan(scenario);
+        currentInstruction = generateResponse();
+    }
+
+    public List<Block> computePlan(String scenario) {
+        JSJshop planner = new JSJshop();
+        var jshopPlan = createPlan(planner, scenario);
+        this.realizer = MinecraftRealizer.createRealizer();
+        world = transformState(planner.prob.state());
+        return transformPlan(jshopPlan);
     }
 
     @Override
@@ -92,7 +108,8 @@ public class SimpleArchitect extends AbstractArchitect {
         sendMessage("Welcome! I will try to instruct you to build a " + scenario);
     }
 
-    public void transformPlan(JSPlan jshopPlan){
+    public List<Block> transformPlan(JSPlan jshopPlan){
+        var result = new ArrayList<Block>();
         JSTaskAtom t;
         for (short i = 0; i < jshopPlan.size(); i++) {
             t = (JSTaskAtom) jshopPlan.elementAt(i);
@@ -101,8 +118,9 @@ public class SimpleArchitect extends AbstractArchitect {
             int x = (int) Double.parseDouble(taskArray[1]);
             int y = (int) Double.parseDouble(taskArray[2]);
             int z = (int) Double.parseDouble(taskArray[3]);
-            this.plan.add(new Block(x,y,z));
+            result.add(new Block(x,y,z));
         }
+        return result;
     }
 
     public HashSet<MinecraftObject> transformState(JSState state){
