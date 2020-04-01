@@ -10,6 +10,7 @@ group 'de.saar.minecraft'
 description 'simple-architect'
 
 scmVersion {
+    ignoreUncommittedChanges = false
     tag {
         prefix = 'release'
     }
@@ -37,9 +38,9 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile 'de.saar.minecraft:minecraft-nlg:1.1.9'
-    compile group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.1.8"
-    compile group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.1.8"
+    compile 'de.saar.minecraft:minecraft-nlg:1.1.10'
+    compile group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.1.10"
+    compile group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.1.10"
     compile 'de.saar.minecraft:jshop:1.2.0'
     runtimeOnly 'de.saar.minecraft:shared-resources:1.1.10'
 }

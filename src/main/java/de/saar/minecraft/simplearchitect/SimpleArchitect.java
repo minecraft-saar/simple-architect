@@ -51,6 +51,8 @@ public class SimpleArchitect extends AbstractArchitect {
     private Orientation lastOrientation = Orientation.ZPLUS;
     private String scenario;
 
+    private Set<Block> alreadyPlacedBlocks = new HashSet<>();
+
     //enum InstructionLevel{
     //    BLOCK,
     //    MEDIUM,
@@ -59,6 +61,11 @@ public class SimpleArchitect extends AbstractArchitect {
 
     public SimpleArchitect() {
 
+    }
+
+    @Override
+    public void playerReady() {
+        sendMessage("Welcome! I will try to instruct you to build a " + scenario);
     }
 
     private static InputStream getResourceStream(String resName) {
@@ -105,7 +112,6 @@ public class SimpleArchitect extends AbstractArchitect {
     @Override
     public void setMessageChannel(StreamObserver<TextMessage> messageChannel) {
         super.setMessageChannel(messageChannel);
-        sendMessage("Welcome! I will try to instruct you to build a " + scenario);
     }
 
     public List<Block> transformPlan(JSPlan jshopPlan){
@@ -173,10 +179,12 @@ public class SimpleArchitect extends AbstractArchitect {
                     plan.remove(0);
                     currentInstruction = generateResponse();
                     response = "Great! now " + currentInstruction;
+                    alreadyPlacedBlocks.add(new Block(x,y,z));
                 } else {
-                    response = String.format("you put a block on (%d, %d, %d) but we wanted a block on (%d, %d, %d)",
-                            x, y, z,
-                            currBlock.xpos, currBlock.ypos, currBlock.zpos);
+                    response = "Not there! please remove that block again and " + currentInstruction;
+                    //response = String.format("you put a block on (%d, %d, %d) but we wanted a block on (%d, %d, %d)",
+                    //        x, y, z,
+                    //        currBlock.xpos, currBlock.ypos, currBlock.zpos);
                 }
             }
             assert !response.equals("");
@@ -191,7 +199,22 @@ public class SimpleArchitect extends AbstractArchitect {
     @Override
     public void handleBlockDestroyed(BlockDestroyedMessage request) {
         // TODO add logic to only say this if the previous block was correct
-        sendMessage("Please add this block again.");
+        int x = request.getX();
+        int y = request.getY();
+        int z = request.getZ();
+        var block = new Block(x,y,z);
+        // If a block that should be placed is removed again, re-add it to the plan
+        // and instruct the user to place this block again
+        if (alreadyPlacedBlocks.contains(block)) {
+            lastBlock = null; // We cannot say "previous block" when the last action was a removal
+            alreadyPlacedBlocks.remove(block);
+            plan.add(0, block);
+            sendMessage("Please add this block again.");
+            currentInstruction = generateResponse();
+            lastUpdate.set(java.lang.System.currentTimeMillis());
+        } else {
+            // Just ignore the vandalism.
+        }
     }
 
     @Override
