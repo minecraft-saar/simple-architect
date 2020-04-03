@@ -12,6 +12,6 @@ public class SimpleArchitectTest {
         architect.initialize(WorldSelectMessage.newBuilder().setGameId(1).setName("house").build());
         var plan = architect.computePlan("house");
         assertTrue(plan.size() > 10);
-        //System.out.println(architect.generateResponse());
+        System.out.println(architect.generateResponse(architect.world, plan.get(0), architect.it));
     }
 }
