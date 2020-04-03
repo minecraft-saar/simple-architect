@@ -41,17 +41,18 @@ import static java.lang.Math.abs;
 
 public class SimpleArchitect extends AbstractArchitect {
     private static Logger logger = LogManager.getLogger(SimpleArchitect.class);
-    private Block lastBlock;
-    private List<Block> plan;
-    private Set<MinecraftObject> world;
+    protected Set<MinecraftObject> it = Set.of();
+    private List<MinecraftObject> plan;
+    private Set<Block> currentInstructionBlocksLeft = Set.of();
+    protected Set<MinecraftObject> world;
     private MinecraftRealizer realizer;
-    private AtomicInteger numInstructions = new AtomicInteger(0);
-    private AtomicLong lastUpdate = new AtomicLong(0);
-    private String currentInstruction;
-    private Orientation lastOrientation = Orientation.ZPLUS;
-    private String scenario;
+    protected AtomicInteger numInstructions = new AtomicInteger(0);
+    protected AtomicLong lastUpdate = new AtomicLong(0);
+    protected String currentInstruction;
+    protected Orientation lastOrientation = Orientation.ZPLUS;
+    protected String scenario;
 
-    private Set<Block> alreadyPlacedBlocks = new HashSet<>();
+    protected Set<Block> alreadyPlacedBlocks = new HashSet<>();
 
     //enum InstructionLevel{
     //    BLOCK,
@@ -78,6 +79,11 @@ public class SimpleArchitect extends AbstractArchitect {
             .collect(Collectors.joining("\n"));
     }
 
+    private static CostFunction.InstructionLevel getInstructionLevel() {
+        var instructionlevel = System.getProperty("instructionlevel", "BLOCK");
+        return CostFunction.InstructionLevel.valueOf(instructionlevel);
+    }
+
     private JSPlan createPlan(JSJshop planner, String screnario) {
         int mctsruns = 10000; //number of runs the planner tries to do
         int timeout = 10000; //time the planner runs in ms
@@ -89,7 +95,7 @@ public class SimpleArchitect extends AbstractArchitect {
         // for simple bridge height is height of banister, for bridge fancy height of arch
         // String house = "build-house x y z width length height"
         String problem = getResourceAsString("/de/saar/minecraft/domains/"+scenario+"-block.init").strip();
-        CostFunction.InstructionLevel level = CostFunction.InstructionLevel.BLOCK;
+        CostFunction.InstructionLevel level = getInstructionLevel();
         return planner.nlgSearch(mctsruns,timeout, initialworld, problem, domain, level);
     }  
 
@@ -98,10 +104,11 @@ public class SimpleArchitect extends AbstractArchitect {
         setGameId(message.getGameId());
         scenario = message.getName();
         this.plan = computePlan(scenario);
-        currentInstruction = generateResponse();
+        currentInstruction = generateResponse(world, plan.get(0), it);
+        currentInstructionBlocksLeft = plan.get(0).getBlocks();
     }
 
-    public List<Block> computePlan(String scenario) {
+    public List<MinecraftObject> computePlan(String scenario) {
         JSJshop planner = new JSJshop();
         var jshopPlan = createPlan(planner, scenario);
         this.realizer = MinecraftRealizer.createRealizer();
@@ -114,8 +121,8 @@ public class SimpleArchitect extends AbstractArchitect {
         super.setMessageChannel(messageChannel);
     }
 
-    public List<Block> transformPlan(JSPlan jshopPlan){
-        var result = new ArrayList<Block>();
+    public List<MinecraftObject> transformPlan(JSPlan jshopPlan){
+        var result = new ArrayList<MinecraftObject>();
         JSTaskAtom t;
         for (short i = 0; i < jshopPlan.size(); i++) {
             t = (JSTaskAtom) jshopPlan.elementAt(i);
@@ -165,33 +172,44 @@ public class SimpleArchitect extends AbstractArchitect {
             int x = request.getX();
             int y = request.getY();
             int z = request.getZ();
+            var blockPlaced = new Block(x,y,z);
             String response = "";
             if (plan.isEmpty()) {
-                response = "you are done, no more changes needed!";
-            } else {
-                var currBlock = plan.get(0);
-                if (currBlock.xpos == x
-                        // && currBlock.ypos == y
-                        && currBlock.zpos == z) {
-                    // make the block respond to "it"
-                    world.add(currBlock);
-                    lastBlock = currBlock;
-                    plan.remove(0);
-                    currentInstruction = generateResponse();
-                    response = "Great! now " + currentInstruction;
-                    alreadyPlacedBlocks.add(new Block(x,y,z));
-                } else {
-                    response = "Not there! please remove that block again and " + currentInstruction;
-                    //response = String.format("you put a block on (%d, %d, %d) but we wanted a block on (%d, %d, %d)",
-                    //        x, y, z,
-                    //        currBlock.xpos, currBlock.ypos, currBlock.zpos);
-                }
+                sendMessage("you are done, no more changes needed!");
+                return;
             }
-            assert !response.equals("");
-            if (plan.isEmpty()) {
-                sendMessage(response, NewGameState.SuccessfullyFinished);
+            /*
+              Three cases:
+              - block is correct and last of curr object
+              - block is somewhere in curr object
+              - block is incorrect
+             */
+            // current object is complete                // current object is complete                // current object is complete
+            if (currentInstructionBlocksLeft.size() == 1 && currentInstructionBlocksLeft.contains(blockPlaced)) {
+                world.add(blockPlaced);
+                it = Set.of(blockPlaced);
+                plan.remove(0);
+                if (plan.isEmpty()) {
+                    sendMessage("Congratulations, you are done building a " + scenario,
+                            NewGameState.SuccessfullyFinished);
+                } else {
+                    var currentObjective = plan.get(0);
+                    currentInstructionBlocksLeft = currentObjective.getBlocks();
+                    currentInstruction = generateResponse(world, plan.get(0), it);
+                    sendMessage("Great! now " + currentInstruction);
+                }
+                alreadyPlacedBlocks.add(blockPlaced);
+                return;
+            }
+            //
+            if (currentInstructionBlocksLeft.contains(blockPlaced)) {
+                // correct block, but objective not complete
+                // Just note and do nothing for now
+                currentInstructionBlocksLeft.remove(blockPlaced);
+                alreadyPlacedBlocks.add(blockPlaced);
+                it = Set.of(blockPlaced);
             } else {
-                sendMessage(response);
+                    sendMessage("Not there! please remove that block again and " + currentInstruction);
             }
         }
     }
@@ -206,11 +224,11 @@ public class SimpleArchitect extends AbstractArchitect {
         // If a block that should be placed is removed again, re-add it to the plan
         // and instruct the user to place this block again
         if (alreadyPlacedBlocks.contains(block)) {
-            lastBlock = null; // We cannot say "previous block" when the last action was a removal
+            it = Set.of(); // We cannot say "previous block" when the last action was a removal
             alreadyPlacedBlocks.remove(block);
             plan.add(0, block);
             sendMessage("Please add this block again.");
-            currentInstruction = generateResponse();
+            currentInstruction = generateResponse(world, plan.get(0), it);
             lastUpdate.set(java.lang.System.currentTimeMillis());
         } else {
             // Just ignore the vandalism.
@@ -246,7 +264,7 @@ public class SimpleArchitect extends AbstractArchitect {
             return;
         }
         if (!orientationStayed) {
-            currentInstruction = generateResponse();
+            currentInstruction = generateResponse(world, plan.get(0), it);
         }
         lastUpdate.set(java.lang.System.currentTimeMillis());
         sendMessage(currentInstruction);
@@ -258,20 +276,16 @@ public class SimpleArchitect extends AbstractArchitect {
         return "SimpleArchitect";
     }
 
-    public String generateResponse() {
-        if (plan.isEmpty()) {
-            return "Congratulations, you are done building a " + scenario;
-        }
+    public String generateResponse(Set<MinecraftObject> world, MinecraftObject target, Set<MinecraftObject> it) {
         var response = "";
-        var target = plan.get(0);
         var relations = Relation.generateAllRelationsBetweeen(
                 Iterables.concat(world,
                         org.eclipse.collections.impl.factory.Iterables.iList(target)
                 ),
                 lastOrientation
         );
-        if (lastBlock != null) {
-            relations.add(new Relation("it", lastBlock));
+        for (var elem: it) {
+            relations.add(new Relation("it", elem));
         }
         try {
             realizer.setRelations(relations);
