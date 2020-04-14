@@ -102,7 +102,7 @@ public class SimpleArchitect extends AbstractArchitect {
         setGameId(message.getGameId());
         scenario = message.getName();
         this.plan = computePlan(scenario);
-        currentInstruction = generateResponse(world, plan.get(0), it);
+        currentInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
         currentInstructionBlocksLeft = plan.get(0).getBlocks();
     }
 
@@ -256,7 +256,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 } else {
                     var currentObjective = plan.get(0);
                     currentInstructionBlocksLeft = currentObjective.getBlocks();
-                    currentInstruction = generateResponse(world, plan.get(0), it);
+                    currentInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
                     sendMessage("Great! now " + currentInstruction);
                 }
                 alreadyPlacedBlocks.add(blockPlaced);
@@ -289,7 +289,7 @@ public class SimpleArchitect extends AbstractArchitect {
             alreadyPlacedBlocks.remove(block);
             plan.add(0, block);
             sendMessage("Please add this block again.");
-            currentInstruction = generateResponse(world, plan.get(0), it);
+            currentInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
             lastUpdate.set(java.lang.System.currentTimeMillis());
         } else {
             // Just ignore the vandalism.
@@ -325,7 +325,7 @@ public class SimpleArchitect extends AbstractArchitect {
             return;
         }
         if (!orientationStayed) {
-            currentInstruction = generateResponse(world, plan.get(0), it);
+            currentInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
         }
         lastUpdate.set(java.lang.System.currentTimeMillis());
         sendMessage(currentInstruction);
@@ -337,23 +337,10 @@ public class SimpleArchitect extends AbstractArchitect {
         return "SimpleArchitect";
     }
 
-    public String generateResponse(Set<MinecraftObject> world, MinecraftObject target, Set<MinecraftObject> it) {
-        var response = "";
-        var relations = Relation.generateAllRelationsBetweeen(
-                Iterables.concat(world,
-                        org.eclipse.collections.impl.factory.Iterables.iList(target)
-                ),
-                lastOrientation
-        );
-        for (var elem : it) {
-            relations.add(new Relation("it", elem));
-        }
-        try {
-            realizer.setRelations(relations);
-            response = realizer.generateStatement("put", target, "type");
-        } catch (ParserException e) {
-            e.printStackTrace();
-        }
-        return response;
+    public String generateResponse(Set<MinecraftObject> world,
+                                   MinecraftObject target,
+                                   Set<MinecraftObject> it,
+                                   Orientation lastOrientation) {
+        return realizer.generateInstruction(world, target, it, lastOrientation);
     }
 }
