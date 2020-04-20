@@ -1,12 +1,10 @@
 package de.saar.minecraft.simplearchitect;
 
-import com.google.common.collect.Iterables;
 import de.saar.coli.minecraft.MinecraftRealizer;
 import de.saar.coli.minecraft.relationextractor.Block;
 import de.saar.coli.minecraft.relationextractor.Row;
 import de.saar.coli.minecraft.relationextractor.Wall;
 import de.saar.coli.minecraft.relationextractor.MinecraftObject;
-import de.saar.coli.minecraft.relationextractor.Relation;
 import de.saar.coli.minecraft.relationextractor.Relation.Orientation;
 import de.saar.coli.minecraft.relationextractor.UniqueBlock;
 import de.saar.minecraft.architect.AbstractArchitect;
@@ -16,7 +14,6 @@ import de.saar.minecraft.shared.NewGameState;
 import de.saar.minecraft.shared.StatusMessage;
 import de.saar.minecraft.shared.TextMessage;
 import de.saar.minecraft.shared.WorldSelectMessage;
-import de.up.ling.irtg.algebra.ParserException;
 import io.grpc.stub.StreamObserver;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -42,6 +40,9 @@ import java.util.stream.Collectors;
 import static java.lang.Math.abs;
 
 public class SimpleArchitect extends AbstractArchitect {
+    private static final CostFunction.InstructionLevel instructionlevel = CostFunction.InstructionLevel.valueOf(
+            System.getProperty("instructionlevel", "BLOCK"));
+
     private static Logger logger = LogManager.getLogger(SimpleArchitect.class);
     protected Set<MinecraftObject> it = Set.of();
     private List<MinecraftObject> plan;
@@ -53,6 +54,8 @@ public class SimpleArchitect extends AbstractArchitect {
     protected String currentInstruction;
     protected Orientation lastOrientation = Orientation.ZPLUS;
     protected String scenario;
+    private CountDownLatch readyCounter = new CountDownLatch(1);
+    private CountDownLatch objectiveSet = new CountDownLatch(1);
 
     protected Set<Block> alreadyPlacedBlocks = new HashSet<>();
 
@@ -68,7 +71,22 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public void playerReady() {
+        logger.debug("received playerReady");
         sendMessage("Welcome! I will try to instruct you to build a " + scenario);
+        // This is the first time we can log something
+        // log the complete plan and the current object.
+        try {
+            readyCounter.await();
+        } catch (InterruptedException e) {
+            // TODO
+            e.printStackTrace();
+        }
+        String planString = "[" +plan.stream()
+                .map(MinecraftObject::asJson)
+                .collect(Collectors.joining(",\n")) + "]";
+        log(planString, "InitialPlan");
+        setObjective(plan.get(0));
+        objectiveSet.countDown();
     }
 
     private static InputStream getResourceStream(String resName) {
@@ -81,42 +99,44 @@ public class SimpleArchitect extends AbstractArchitect {
                 .collect(Collectors.joining("\n"));
     }
 
-    private static CostFunction.InstructionLevel getInstructionLevel() {
-        var instructionlevel = System.getProperty("instructionlevel", "BLOCK");
-        return CostFunction.InstructionLevel.valueOf(instructionlevel);
-    }
-
-    private JSPlan createPlan(JSJshop planner, String screnario) {
+    private JSPlan createPlan(JSJshop planner, String scenario) {
+        logger.debug("creating plan for " + scenario);
         int mctsruns = 10000; //number of runs the planner tries to do
         int timeout = 10000; //time the planner runs in ms
 
         var initialworld = getResourceStream("/de/saar/minecraft/worlds/" + scenario + ".csv");
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
         String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
-        CostFunction.InstructionLevel level = getInstructionLevel();
-        return planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, level);
+        return planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, instructionlevel);
     }
 
     @Override
     public void initialize(WorldSelectMessage message) {
+        logger.debug(() -> "initializing with " + message);
         setGameId(message.getGameId());
         scenario = message.getName();
         this.plan = computePlan(scenario);
-        currentInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
-        currentInstructionBlocksLeft = plan.get(0).getBlocks();
+        logger.debug("initialization done");
+        readyCounter.countDown();
     }
 
+    /**
+     * computes the plan and initializes the world.
+     */
     public List<MinecraftObject> computePlan(String scenario) {
+        logger.debug("computing plan");
         JSJshop planner = new JSJshop();
         var jshopPlan = createPlan(planner, scenario);
         this.realizer = MinecraftRealizer.createRealizer();
         world = transformState(planner.prob.state());
+        // note which blocks already exist in the world.
+        world.forEach((x) ->
+                x.getBlocks().forEach((block) ->
+                        alreadyPlacedBlocks.add(new Block(block.xpos, block.ypos, block.zpos))
+                )
+        );
+        logger.debug("plan computed");
         return transformPlan(jshopPlan);
-    }
-
-    @Override
-    public void setMessageChannel(StreamObserver<TextMessage> messageChannel) {
-        super.setMessageChannel(messageChannel);
     }
 
     public List<MinecraftObject> transformPlan(JSPlan jshopPlan) {
@@ -303,21 +323,19 @@ public class SimpleArchitect extends AbstractArchitect {
               - block is somewhere in curr object
               - block is incorrect
              */
-            // current object is complete                // current object is complete                // current object is complete
+            // current object is complete
             if (currentInstructionBlocksLeft.size() == 1 && currentInstructionBlocksLeft.contains(blockPlaced)) {
                 world.add(blockPlaced);
+                alreadyPlacedBlocks.add(blockPlaced);
                 it = Set.of(blockPlaced);
                 plan.remove(0);
                 if (plan.isEmpty()) {
                     sendMessage("Congratulations, you are done building a " + scenario,
                             NewGameState.SuccessfullyFinished);
                 } else {
-                    var currentObjective = plan.get(0);
-                    currentInstructionBlocksLeft = currentObjective.getBlocks();
-                    currentInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
+                    setObjective(plan.get(0));
                     sendMessage("Great! now " + currentInstruction);
                 }
-                alreadyPlacedBlocks.add(blockPlaced);
                 return;
             }
             //
@@ -333,6 +351,21 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
+    /**
+     * Sets the new objective, computes which blocks are still missing for it and updates the instruction.
+     */
+    private void setObjective(MinecraftObject objective) {
+        log(objective.asJson(), "CurrentObject");
+        currentInstructionBlocksLeft = objective.getBlocks();
+        currentInstructionBlocksLeft.removeAll(alreadyPlacedBlocks);
+        String currentObjectsLeft = currentInstructionBlocksLeft.
+                stream().
+                map(MinecraftObject::asJson)
+                .collect(Collectors.joining(",\n"));
+        log(currentObjectsLeft, "BlocksCurrentObjectLeft");
+        currentInstruction = generateResponse(world, objective, it, lastOrientation);
+    }
+
     @Override
     public void handleBlockDestroyed(BlockDestroyedMessage request) {
         // TODO add logic to only say this if the previous block was correct
@@ -346,8 +379,8 @@ public class SimpleArchitect extends AbstractArchitect {
             it = Set.of(); // We cannot say "previous block" when the last action was a removal
             alreadyPlacedBlocks.remove(block);
             plan.add(0, block);
+            setObjective(block);
             sendMessage("Please add this block again.");
-            currentInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
             lastUpdate.set(java.lang.System.currentTimeMillis());
         } else {
             // Just ignore the vandalism.
@@ -356,6 +389,10 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public void handleStatusInformation(StatusMessage request) {
+        if (objectiveSet.getCount() > 0) {
+            return;
+        }
+        logger.debug("handleStatusInformation " + request);
         var x = request.getXDirection();
         var z = request.getZDirection();
         Orientation newOrientation;
@@ -384,6 +421,7 @@ public class SimpleArchitect extends AbstractArchitect {
         }
         if (!orientationStayed) {
             currentInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
+            log(newOrientation.toString(), "NewOrientation");
         }
         lastUpdate.set(java.lang.System.currentTimeMillis());
         sendMessage(currentInstruction);
@@ -392,7 +430,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public String getArchitectInformation() {
-        return "SimpleArchitect";
+        return "SimpleArchitect-"+instructionlevel;
     }
 
     public String generateResponse(Set<MinecraftObject> world,
