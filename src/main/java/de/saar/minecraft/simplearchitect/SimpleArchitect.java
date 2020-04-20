@@ -91,8 +91,8 @@ public class SimpleArchitect extends AbstractArchitect {
         int timeout = 10000; //time the planner runs in ms
 
         var initialworld = getResourceStream("/de/saar/minecraft/worlds/" + scenario + ".csv");
-        var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + "-block.lisp");
-        String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + "-block.init").strip();
+        var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
+        String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
         CostFunction.InstructionLevel level = getInstructionLevel();
         return planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, level);
     }
@@ -126,7 +126,7 @@ public class SimpleArchitect extends AbstractArchitect {
             t = (JSTaskAtom) jshopPlan.elementAt(i);
             String task = t.toStr().toString();
             String[] taskArray = task.split(" ");
-            int x1, y1, z1, x2, y2, z2, length, height, dir;
+            int x1, y1, z1, x2, y2, z2, length, width, height, dir;
             switch (taskArray[0]) {
                 case "(!place-block":
                     x1 = (int) Double.parseDouble(taskArray[2]);
@@ -140,16 +140,18 @@ public class SimpleArchitect extends AbstractArchitect {
                     z1 = (int) Double.parseDouble(taskArray[3]);
                     length = (int) Double.parseDouble(taskArray[4]);
                     dir = (int) Double.parseDouble(taskArray[5]);
-                    //east=1=>x+, west=2=>x-, north=3=>y-, south=4=>y+
+                    //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
                     if (dir == 1) {
                         x2 = x1 + length - 1;
                         z2 = z1;
                     } else if (dir == 2) {
-                        x2 = x1 - length + 1;
+                        x2 = x1;
+                        x1 = x1 - length + 1;
                         z2 = z1;
                     } else if (dir == 3) {
                         x2 = x1;
-                        z2 = z1 - length + 1;
+                        z2 = z1;
+                        z1 = z1 - length + 1;
                     } else if(dir == 4) {
                         x2 = x1;
                         z2 = z1 + length - 1;
@@ -166,17 +168,19 @@ public class SimpleArchitect extends AbstractArchitect {
                     length = (int) Double.parseDouble(taskArray[4]);
                     height = (int) Double.parseDouble(taskArray[5]);
                     dir = (int) Double.parseDouble(taskArray[6]);
-                    //east=1=>x+, west=2=>x-, north=3=>y-, south=4=>y+
+                    //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
 
                     if (dir == 1) {
                         x2 = x1 + length - 1;
                         z2 = z1;
                     } else if (dir == 2) {
-                        x2 = x1 - length + 1;
+                        x2 = x1;
+                        x1 = x1 - length + 1;
                         z2 = z1;
                     } else if (dir == 3) {
                         x2 = x1;
-                        z2 = z1 - length + 1;
+                        z2 = z1;
+                        z1 = z1 - length + 1;
                     } else if(dir == 4) {
                         x2 = x1;
                         z2 = z1 + length - 1;
@@ -185,8 +189,62 @@ public class SimpleArchitect extends AbstractArchitect {
                         break;
                     }
                     y2 = y1 + height -1;
-                    result.add(new Wall("row", x1, y1, z1, x2, y2, z2));
+                    result.add(new Wall("wall", x1, y1, z1, x2, y2, z2));
                     break;
+                case "(!build-railing":
+                    x1 = (int) Double.parseDouble(taskArray[1]);
+                    y1 = (int) Double.parseDouble(taskArray[2]);
+                    z1 = (int) Double.parseDouble(taskArray[3]);
+                    length = (int) Double.parseDouble(taskArray[4]);
+                    dir = (int) Double.parseDouble(taskArray[5]);
+                    //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
+                    if (dir == 1) {
+                        x2 = x1 + length - 1;
+                        z2 = z1;
+                    } else if (dir == 2) {
+                        x2 = x1;
+                        x1 = x1 - length + 1;
+                        z2 = z1;
+                    } else if (dir == 3) {
+                        x2 = x1;
+                        z2 = z1;
+                        z1 = z1 - length + 1;
+                    } else if(dir == 4) {
+                        x2 = x1;
+                        z2 = z1 + length - 1;
+                    } else {
+                        System.err.println("Unkown direction in plan transformation");
+                        break;
+                    }
+                    result.add(new Railing("railing", x1, z1, x2, z2, y1));
+                    break;
+                case "(!build-floor":
+                    x1 = (int) Double.parseDouble(taskArray[1]);
+                    y1 = (int) Double.parseDouble(taskArray[2]);
+                    z1 = (int) Double.parseDouble(taskArray[3]);
+                    length = (int) Double.parseDouble(taskArray[4]);
+                    width = (int) Double.parseDouble(taskArray[5]);
+                    dir = (int) Double.parseDouble(taskArray[6]);
+                    //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
+                    if (dir == 1) {
+                        x2 = x1 + width - 1;
+                        z2 = z1 + length -1;
+                    } else if (dir == 2) {
+                        x2 = x1;
+                        x1 = x1 - width + 1;
+                        z2 = z1 + length - 1;
+                    } else if (dir == 3) {
+                        x2 = x1 + length - 1;
+                        z2 = z1;
+                        z1 = z1 - width + 1;
+                    } else if(dir == 4) {
+                        x2 = x1 + length - 1;
+                        z2 = z1 + width - 1;
+                    } else {
+                        System.err.println("Unkown direction in plan transformation");
+                        break;
+                    }
+                    result.add(new Floor("floor", x1, z1, x2, z2, y1));
                 default:
                     System.out.println("New Action "+ task);
                     break;
