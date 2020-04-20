@@ -46,3 +46,15 @@ dependencies {
 }
 
 mainClassName = 'de.saar.minecraft.simplearchitect.Main'
+
+task runBlock(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = mainClassName
+    jvmArgs "-Dinstructionlevel=BLOCK"
+}
+
+task runHighlevel(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = mainClassName
+    jvmArgs "-Dinstructionlevel=HIGHLEVEL"
+}
