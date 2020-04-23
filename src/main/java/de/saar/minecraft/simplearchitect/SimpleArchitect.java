@@ -107,7 +107,7 @@ public class SimpleArchitect extends AbstractArchitect {
         var initialworld = getResourceStream("/de/saar/minecraft/worlds/" + scenario + ".csv");
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
         String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
-        return planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, instructionlevel);
+        return planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, CostFunction.InstructionLevel.BLOCK);
     }
 
     @Override
@@ -145,6 +145,7 @@ public class SimpleArchitect extends AbstractArchitect {
         for (short i = 0; i < jshopPlan.size(); i++) {
             t = (JSTaskAtom) jshopPlan.elementAt(i);
             String task = t.toStr().toString();
+            log(task, "Plan");
             String[] taskArray = task.split(" ");
             int x1, y1, z1, x2, y2, z2, length, width, height, dir;
             switch (taskArray[0]) {
@@ -265,8 +266,10 @@ public class SimpleArchitect extends AbstractArchitect {
                         break;
                     }
                     result.add(new Floor("floor", x1, z1, x2, z2, y1));
+                    break;
                 default:
-                    System.out.println("New Action "+ task);
+                    log(task, "NewAction");
+                    //System.out.println("New Action "+ task);
                     break;
             }
         }
@@ -287,10 +290,8 @@ public class SimpleArchitect extends AbstractArchitect {
             int x = (int) Double.parseDouble(tmp.toStr().toString());
             tmp = (JSTerm) term.elementAt(3);
             int y = (int) Double.parseDouble(tmp.toStr().toString());
-            ;
             tmp = (JSTerm) term.elementAt(4);
             int z = (int) Double.parseDouble(tmp.toStr().toString());
-            ;
             //System.out.println("Block: " + type + " " + x + " " + y + " "+ z);
             set.add(new UniqueBlock(type, x, y, z));
         }
