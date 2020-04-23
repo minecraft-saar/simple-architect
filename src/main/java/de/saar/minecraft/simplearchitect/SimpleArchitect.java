@@ -107,7 +107,7 @@ public class SimpleArchitect extends AbstractArchitect {
         var initialworld = getResourceStream("/de/saar/minecraft/worlds/" + scenario + ".csv");
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
         String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
-        return planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, CostFunction.InstructionLevel.BLOCK);
+        return planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, instructionlevel);
     }
 
     @Override
