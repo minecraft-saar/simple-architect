@@ -73,6 +73,9 @@ public class SimpleArchitect extends AbstractArchitect {
     public void playerReady() {
         logger.debug("received playerReady");
         sendMessage("Welcome! I will try to instruct you to build a " + scenario);
+        sendMessage("you can move around with w,a,s,d and look around with your mouse.");
+        sendMessage("Place blocks with the RIGHT mouse button, delete with LEFT mouse button.");
+        sendMessage("press spacebar twice to fly and shift to dive.");
         // This is the first time we can log something
         // log the complete plan and the current object.
         try {
