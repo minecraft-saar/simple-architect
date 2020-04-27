@@ -330,6 +330,7 @@ public class SimpleArchitect extends AbstractArchitect {
             // current object is complete
             if (currentInstructionBlocksLeft.size() == 1 && currentInstructionBlocksLeft.contains(blockPlaced)) {
                 world.add(blockPlaced);
+                world.add(plan.get(0));
                 alreadyPlacedBlocks.add(blockPlaced);
                 it = Set.of(blockPlaced);
                 plan.remove(0);
