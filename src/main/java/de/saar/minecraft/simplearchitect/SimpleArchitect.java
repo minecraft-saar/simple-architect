@@ -231,7 +231,7 @@ public class SimpleArchitect extends AbstractArchitect {
         for (short i = 0; i < jshopPlan.size(); i++) {
             t = (JSTaskAtom) jshopPlan.elementAt(i);
             String task = t.toStr().toString();
-            log(task, "Plan");
+            //log(task, "Plan");
             String[] taskArray = task.split(" ");
             int x1, y1, z1, x2, y2, z2, length, width, height, dir;
             boolean inst = false;
@@ -297,7 +297,7 @@ public class SimpleArchitect extends AbstractArchitect {
                     result.add(createFloor(taskArray));
                     break;
                 default:
-                    log(task, "NewAction");
+                    //log(task, "NewAction");
                     //System.out.println("New Action "+ task);
                     break;
             }
@@ -356,6 +356,7 @@ public class SimpleArchitect extends AbstractArchitect {
             // current object is complete
             if (currentInstructionBlocksLeft.size() == 1 && currentInstructionBlocksLeft.contains(blockPlaced)) {
                 world.add(blockPlaced);
+                world.add(plan.get(0));
                 alreadyPlacedBlocks.add(blockPlaced);
                 it = Set.of(blockPlaced);
                 plan.remove(0);
