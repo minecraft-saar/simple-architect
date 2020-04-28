@@ -148,7 +148,7 @@ public class SimpleArchitect extends AbstractArchitect {
         for (short i = 0; i < jshopPlan.size(); i++) {
             t = (JSTaskAtom) jshopPlan.elementAt(i);
             String task = t.toStr().toString();
-            log(task, "Plan");
+            //log(task, "Plan");
             String[] taskArray = task.split(" ");
             int x1, y1, z1, x2, y2, z2, length, width, height, dir;
             switch (taskArray[0]) {
@@ -271,7 +271,7 @@ public class SimpleArchitect extends AbstractArchitect {
                     result.add(new Floor("floor", x1, z1, x2, z2, y1));
                     break;
                 default:
-                    log(task, "NewAction");
+                    //log(task, "NewAction");
                     //System.out.println("New Action "+ task);
                     break;
             }
