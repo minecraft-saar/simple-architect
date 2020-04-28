@@ -84,7 +84,7 @@ public class SimpleArchitect extends AbstractArchitect {
             // TODO
             e.printStackTrace();
         }
-        String planString = "[" +plan.stream()
+        String planString = "[" + plan.stream()
                 .map(MinecraftObject::asJson)
                 .collect(Collectors.joining(",\n")) + "]";
         log(planString, "InitialPlan");
@@ -142,6 +142,89 @@ public class SimpleArchitect extends AbstractArchitect {
         return transformPlan(jshopPlan);
     }
 
+    public MinecraftObject createRailing(String[] taskArray) {
+        int x1, x2, y1, z1, z2, length, dir;
+        x1 = (int) Double.parseDouble(taskArray[1]);
+        y1 = (int) Double.parseDouble(taskArray[2]);
+        z1 = (int) Double.parseDouble(taskArray[3]);
+        length = (int) Double.parseDouble(taskArray[4]);
+        dir = (int) Double.parseDouble(taskArray[5]);
+        //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
+        if (dir == 1) {
+            x2 = x1 + length - 1;
+            z2 = z1;
+        } else if (dir == 2) {
+            x2 = x1;
+            x1 = x1 - length + 1;
+            z2 = z1;
+        } else if (dir == 3) {
+            x2 = x1;
+            z2 = z1;
+            z1 = z1 - length + 1;
+        } else { // dir == 4
+            x2 = x1;
+            z2 = z1 + length - 1;
+        }
+        return new Railing("railing", x1, z1, x2, z2, y1);
+    }
+
+    public MinecraftObject createWall(String[] taskArray) {
+        int x1, x2, y1, y2, z1, z2, length, height, dir;
+        x1 = (int) Double.parseDouble(taskArray[1]);
+        y1 = (int) Double.parseDouble(taskArray[2]);
+        z1 = (int) Double.parseDouble(taskArray[3]);
+        length = (int) Double.parseDouble(taskArray[4]);
+        height = (int) Double.parseDouble(taskArray[5]);
+        dir = (int) Double.parseDouble(taskArray[6]);
+        //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
+
+        if (dir == 1) {
+            x2 = x1 + length - 1;
+            z2 = z1;
+        } else if (dir == 2) {
+            x2 = x1;
+            x1 = x1 - length + 1;
+            z2 = z1;
+        } else if (dir == 3) {
+            x2 = x1;
+            z2 = z1;
+            z1 = z1 - length + 1;
+        } else {
+            x2 = x1;
+            z2 = z1 + length - 1;
+        }
+        y2 = y1 + height - 1;
+        return new Wall("wall", x1, y1, z1, x2, y2, z2);
+    }
+
+    public MinecraftObject createFloor(String[] taskArray) {
+        int x1, x2, y1, z1, z2, length, width, dir;
+        x1 = (int) Double.parseDouble(taskArray[1]);
+        y1 = (int) Double.parseDouble(taskArray[2]);
+        z1 = (int) Double.parseDouble(taskArray[3]);
+        length = (int) Double.parseDouble(taskArray[4]);
+        width = (int) Double.parseDouble(taskArray[5]);
+        dir = (int) Double.parseDouble(taskArray[6]);
+        //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
+        if (dir == 1) {
+            x2 = x1 + width - 1;
+            z2 = z1 + length - 1;
+        } else if (dir == 2) {
+            x2 = x1;
+            x1 = x1 - width + 1;
+            z2 = z1 + length - 1;
+        } else if (dir == 3) {
+            x2 = x1 + length - 1;
+            z2 = z1;
+            z1 = z1 - width + 1;
+        } else {
+            x2 = x1 + length - 1;
+            z2 = z1 + width - 1;
+        }
+        return new Floor("floor", x1, z1, x2, z2, y1);
+
+    }
+
     public List<MinecraftObject> transformPlan(JSPlan jshopPlan) {
         var result = new ArrayList<MinecraftObject>();
         JSTaskAtom t;
@@ -151,6 +234,7 @@ public class SimpleArchitect extends AbstractArchitect {
             log(task, "Plan");
             String[] taskArray = task.split(" ");
             int x1, y1, z1, x2, y2, z2, length, width, height, dir;
+            boolean inst = false;
             switch (taskArray[0]) {
                 case "(!place-block":
                     x1 = (int) Double.parseDouble(taskArray[2]);
@@ -176,7 +260,7 @@ public class SimpleArchitect extends AbstractArchitect {
                         x2 = x1;
                         z2 = z1;
                         z1 = z1 - length + 1;
-                    } else if(dir == 4) {
+                    } else if (dir == 4) {
                         x2 = x1;
                         z2 = z1 + length - 1;
                     } else {
@@ -185,90 +269,32 @@ public class SimpleArchitect extends AbstractArchitect {
                     }
                     result.add(new Row("row", x1, z1, x2, z2, y1));
                     break;
+                case "(!build-wall-starting":
+                    result.add(new IntroductionMessage(createWall(taskArray), true, "wall"));
+                    break;
+                case "(!build-wall-finished":
+                    result.add(new IntroductionMessage(createWall(taskArray), false, "wall"));
+                    break;
                 case "(!build-wall":
-                    x1 = (int) Double.parseDouble(taskArray[1]);
-                    y1 = (int) Double.parseDouble(taskArray[2]);
-                    z1 = (int) Double.parseDouble(taskArray[3]);
-                    length = (int) Double.parseDouble(taskArray[4]);
-                    height = (int) Double.parseDouble(taskArray[5]);
-                    dir = (int) Double.parseDouble(taskArray[6]);
-                    //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
-
-                    if (dir == 1) {
-                        x2 = x1 + length - 1;
-                        z2 = z1;
-                    } else if (dir == 2) {
-                        x2 = x1;
-                        x1 = x1 - length + 1;
-                        z2 = z1;
-                    } else if (dir == 3) {
-                        x2 = x1;
-                        z2 = z1;
-                        z1 = z1 - length + 1;
-                    } else if(dir == 4) {
-                        x2 = x1;
-                        z2 = z1 + length - 1;
-                    } else {
-                        System.err.println("Unkown direction in plan transformation");
-                        break;
-                    }
-                    y2 = y1 + height -1;
-                    result.add(new Wall("wall", x1, y1, z1, x2, y2, z2));
+                    result.add(createWall(taskArray));
+                    break;
+                case "(!build-railing-starting":
+                    result.add(new IntroductionMessage(createRailing(taskArray), true, "railing"));
+                    break;
+                case "(!build-railing-finished":
+                    result.add(new IntroductionMessage(createRailing(taskArray), false, "railing"));
                     break;
                 case "(!build-railing":
-                    x1 = (int) Double.parseDouble(taskArray[1]);
-                    y1 = (int) Double.parseDouble(taskArray[2]);
-                    z1 = (int) Double.parseDouble(taskArray[3]);
-                    length = (int) Double.parseDouble(taskArray[4]);
-                    dir = (int) Double.parseDouble(taskArray[5]);
-                    //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
-                    if (dir == 1) {
-                        x2 = x1 + length - 1;
-                        z2 = z1;
-                    } else if (dir == 2) {
-                        x2 = x1;
-                        x1 = x1 - length + 1;
-                        z2 = z1;
-                    } else if (dir == 3) {
-                        x2 = x1;
-                        z2 = z1;
-                        z1 = z1 - length + 1;
-                    } else if(dir == 4) {
-                        x2 = x1;
-                        z2 = z1 + length - 1;
-                    } else {
-                        System.err.println("Unkown direction in plan transformation");
-                        break;
-                    }
-                    result.add(new Railing("railing", x1, z1, x2, z2, y1));
+                    result.add(createRailing(taskArray));
+                    break;
+                case "(!build-floor-starting":
+                    result.add(new IntroductionMessage(createFloor(taskArray), true, "floor"));
+                    break;
+                case "(!build-floor-finished":
+                    result.add(new IntroductionMessage(createFloor(taskArray), false, "floor"));
                     break;
                 case "(!build-floor":
-                    x1 = (int) Double.parseDouble(taskArray[1]);
-                    y1 = (int) Double.parseDouble(taskArray[2]);
-                    z1 = (int) Double.parseDouble(taskArray[3]);
-                    length = (int) Double.parseDouble(taskArray[4]);
-                    width = (int) Double.parseDouble(taskArray[5]);
-                    dir = (int) Double.parseDouble(taskArray[6]);
-                    //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
-                    if (dir == 1) {
-                        x2 = x1 + width - 1;
-                        z2 = z1 + length -1;
-                    } else if (dir == 2) {
-                        x2 = x1;
-                        x1 = x1 - width + 1;
-                        z2 = z1 + length - 1;
-                    } else if (dir == 3) {
-                        x2 = x1 + length - 1;
-                        z2 = z1;
-                        z1 = z1 - width + 1;
-                    } else if(dir == 4) {
-                        x2 = x1 + length - 1;
-                        z2 = z1 + width - 1;
-                    } else {
-                        System.err.println("Unkown direction in plan transformation");
-                        break;
-                    }
-                    result.add(new Floor("floor", x1, z1, x2, z2, y1));
+                    result.add(createFloor(taskArray));
                     break;
                 default:
                     log(task, "NewAction");
@@ -359,6 +385,17 @@ public class SimpleArchitect extends AbstractArchitect {
      * Sets the new objective, computes which blocks are still missing for it and updates the instruction.
      */
     private void setObjective(MinecraftObject objective) {
+        if (objective instanceof IntroductionMessage) {
+            IntroductionMessage obj = (IntroductionMessage) objective;
+            log(obj.asJson(), "CurrentObject");
+            //String message = generateResponse(world, obj.object, it, lastOrientation);
+            if (obj.starting) {
+                sendMessage("Now I will teach you how to build a " + obj.name);
+            } else {
+                sendMessage("Great! You finished building a " + obj.name);
+            }
+            objective = plan.get(0);
+        }
         log(objective.asJson(), "CurrentObject");
         currentInstructionBlocksLeft = objective.getBlocks();
         currentInstructionBlocksLeft.removeAll(alreadyPlacedBlocks);
@@ -369,6 +406,7 @@ public class SimpleArchitect extends AbstractArchitect {
         log(currentObjectsLeft, "BlocksCurrentObjectLeft");
         currentInstruction = generateResponse(world, objective, it, lastOrientation);
     }
+
 
     @Override
     public void handleBlockDestroyed(BlockDestroyedMessage request) {
@@ -434,7 +472,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public String getArchitectInformation() {
-        return "SimpleArchitect-"+instructionlevel;
+        return "SimpleArchitect-" + instructionlevel;
     }
 
     public String generateResponse(Set<MinecraftObject> world,
