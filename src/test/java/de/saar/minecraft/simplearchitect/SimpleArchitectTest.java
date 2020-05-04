@@ -1,5 +1,6 @@
 package de.saar.minecraft.simplearchitect;
 
+import de.saar.coli.minecraft.relationextractor.MinecraftObject;
 import de.saar.coli.minecraft.relationextractor.Relation;
 import de.saar.minecraft.shared.WorldSelectMessage;
 import org.junit.Test;
@@ -13,7 +14,19 @@ public class SimpleArchitectTest {
         architect.initialize(WorldSelectMessage.newBuilder().setGameId(1).setName("house").build());
         var plan = architect.computePlan("house");
         assertTrue(plan.size() > 10);
+        MinecraftObject objective = plan.get(0);
+        while (objective instanceof IntroductionMessage) {
+            IntroductionMessage obj = (IntroductionMessage) objective;
+            //String message = generateResponse(world, obj.object, it, lastOrientation);
+            if (obj.starting) {
+                System.out.println("Now I will teach you how to build a " + obj.name);
+            } else {
+                System.out.println("Great! You finished building a " + obj.name);
+            }
+            plan.remove(0);
+            objective = plan.get(0);
+        }
         System.out.println(architect.generateResponse(architect.world,
-                plan.get(0), architect.it, Relation.Orientation.ZPLUS));
+                objective, architect.it, Relation.Orientation.ZPLUS));
     }
 }

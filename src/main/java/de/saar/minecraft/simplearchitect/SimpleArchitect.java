@@ -296,9 +296,11 @@ public class SimpleArchitect extends AbstractArchitect {
                 case "(!build-floor":
                     result.add(createFloor(taskArray));
                     break;
+                case "(!place-block-hidden":
+                    break;
                 default:
                     //log(task, "NewAction");
-                    //System.out.println("New Action "+ task);
+                    System.out.println("New Action "+ task);
                     break;
             }
         }
@@ -386,6 +388,7 @@ public class SimpleArchitect extends AbstractArchitect {
      * Sets the new objective, computes which blocks are still missing for it and updates the instruction.
      */
     private void setObjective(MinecraftObject objective) {
+
         if (objective instanceof IntroductionMessage) {
             IntroductionMessage obj = (IntroductionMessage) objective;
             log(obj.asJson(), "CurrentObject");
@@ -395,6 +398,7 @@ public class SimpleArchitect extends AbstractArchitect {
             } else {
                 sendMessage("Great! You finished building a " + obj.name);
             }
+            plan.remove(0);
             objective = plan.get(0);
         }
         log(objective.asJson(), "CurrentObject");
