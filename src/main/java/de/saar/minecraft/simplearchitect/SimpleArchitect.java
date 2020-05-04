@@ -102,15 +102,40 @@ public class SimpleArchitect extends AbstractArchitect {
                 .collect(Collectors.joining("\n"));
     }
 
-    private JSPlan createPlan(JSJshop planner, String scenario) {
+    private String createPlan(JSJshop planner, String scenario) {
         logger.debug("creating plan for " + scenario);
-        int mctsruns = 10000; //number of runs the planner tries to do
+        int mctsruns = 1; //number of runs the planner tries to do
         int timeout = 10000; //time the planner runs in ms
 
         var initialworld = getResourceStream("/de/saar/minecraft/worlds/" + scenario + ".csv");
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
         String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
-        return planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, instructionlevel);
+        planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, instructionlevel);
+        if(scenario.equals("house")){
+            switch (instructionlevel) {
+                case BLOCK:
+                    return getResourceAsString("/de/saar/minecraft/domains/" + "house-block.plan");
+                case MEDIUM:
+                    return getResourceAsString("/de/saar/minecraft/domains/" + "house-medium.plan");
+                case HIGHLEVEL:
+                    return getResourceAsString("/de/saar/minecraft/domains/" + "house-highlevel.plan");
+                default:
+                    return "";
+            }
+        } else if(scenario.equals("bridge")){
+            switch (instructionlevel) {
+                case BLOCK:
+                    return getResourceAsString("/de/saar/minecraft/domains/" + "bridge-block.plan");
+                case MEDIUM:
+                    return getResourceAsString("/de/saar/minecraft/domains/" + "bridge-medium.plan");
+                case HIGHLEVEL:
+                    return getResourceAsString("/de/saar/minecraft/domains/" + "bridge-highlevel.plan");
+                default:
+                    return "";
+            }
+        } else {
+            return "";
+        }
     }
 
     @Override
@@ -225,12 +250,13 @@ public class SimpleArchitect extends AbstractArchitect {
 
     }
 
-    public List<MinecraftObject> transformPlan(JSPlan jshopPlan) {
+    public List<MinecraftObject> transformPlan(String jshopPlan) {
         var result = new ArrayList<MinecraftObject>();
+        String[] tasks = jshopPlan.split("\n");
         JSTaskAtom t;
-        for (short i = 0; i < jshopPlan.size(); i++) {
-            t = (JSTaskAtom) jshopPlan.elementAt(i);
-            String task = t.toStr().toString();
+        for (String task : tasks) {
+            //t = (JSTaskAtom) jshopPlan.elementAt(i);
+            //String task = tasks[i];
             //log(task, "Plan");
             String[] taskArray = task.split(" ");
             int x1, y1, z1, x2, y2, z2, length, width, height, dir;
@@ -300,7 +326,7 @@ public class SimpleArchitect extends AbstractArchitect {
                     break;
                 default:
                     //log(task, "NewAction");
-                    System.out.println("New Action "+ task);
+                    System.out.println("New Action " + task);
                     break;
             }
         }

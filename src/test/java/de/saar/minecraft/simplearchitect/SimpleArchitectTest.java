@@ -26,6 +26,7 @@ public class SimpleArchitectTest {
             plan.remove(0);
             objective = plan.get(0);
         }
+        //System.out.println(objective.toString());
         System.out.println(architect.generateResponse(architect.world,
                 objective, architect.it, Relation.Orientation.ZPLUS));
     }
