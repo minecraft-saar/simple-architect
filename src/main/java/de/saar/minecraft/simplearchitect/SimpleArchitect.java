@@ -415,7 +415,7 @@ public class SimpleArchitect extends AbstractArchitect {
      */
     private void setObjective(MinecraftObject objective) {
 
-        if (objective instanceof IntroductionMessage) {
+        while (objective instanceof IntroductionMessage) {
             IntroductionMessage obj = (IntroductionMessage) objective;
             log(obj.asJson(), "CurrentObject");
             //String message = generateResponse(world, obj.object, it, lastOrientation);
