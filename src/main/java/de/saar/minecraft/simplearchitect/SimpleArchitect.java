@@ -390,7 +390,14 @@ public class SimpleArchitect extends AbstractArchitect {
                 world.add(plan.get(0));
                 alreadyPlacedBlocks.add(blockPlaced);
                 // we can refer to the HLO and the block as it.
-                it = Set.of(blockPlaced, plan.get(0));
+                if (! blockPlaced.equals(plan.get(0))) {
+                    it = Set.of(blockPlaced, plan.get(0));
+                } else {
+                    // Set.of cannot deal with multiple elements being the same,
+                    // therefore we check this in this if/else clause.
+                    // Both are the same if we instructed to build a single block.
+                    it = Set.of(blockPlaced);
+                }
                 plan.remove(0);
                 if (plan.isEmpty()) {
                     sendMessage("Congratulations, you are done building a " + scenario,
