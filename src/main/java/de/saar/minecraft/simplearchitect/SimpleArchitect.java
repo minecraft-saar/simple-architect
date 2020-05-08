@@ -41,7 +41,7 @@ import static java.lang.Math.abs;
 
 public class SimpleArchitect extends AbstractArchitect {
     private static final CostFunction.InstructionLevel instructionlevel = CostFunction.InstructionLevel.valueOf(
-            System.getProperty("instructionlevel", "MEDIUM"));
+            System.getProperty("instructionlevel", "BLOCK"));
 
     private static final Logger logger = LogManager.getLogger(SimpleArchitect.class);
     protected Set<MinecraftObject> it = Set.of();
@@ -446,6 +446,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 sendMessage("Now I will teach you how to build a " + obj.name);
             } else {
                 sendMessage("Great! You finished building a " + obj.name);
+                world.add(obj.object);
             }
             plan.remove(0);
             if (plan.isEmpty()) {
