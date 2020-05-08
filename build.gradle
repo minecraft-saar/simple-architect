@@ -56,6 +56,12 @@ task runBlock(type: JavaExec) {
     jvmArgs "-Dinstructionlevel=BLOCK"
 }
 
+task runMedium(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = mainClassName
+    jvmArgs "-Dinstructionlevel=MEDIUM"
+}
+
 task runHighlevel(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     main = mainClassName

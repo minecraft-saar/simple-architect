@@ -49,7 +49,7 @@ public class SimpleArchitect extends AbstractArchitect {
     private Set<Block> currentInstructionBlocksLeft = Set.of();
     protected Set<MinecraftObject> world;
     private MinecraftRealizer realizer;
-    protected AtomicInteger numInstructions = new AtomicInteger(0);
+    protected AtomicInteger numBlocksPlaced = new AtomicInteger(0);
     protected AtomicLong lastUpdate = new AtomicLong(0);
     protected String currentInstruction;
     protected Orientation lastOrientation = Orientation.ZPLUS;
@@ -367,14 +367,8 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public void handleBlockPlaced(BlockPlacedMessage request) {
-        int currNumInstructions = numInstructions.incrementAndGet();
-
-        synchronized (realizer) {
-            if (currNumInstructions < numInstructions.get()) {
-                // other instructions were planned after this one,
-                // our information is outdated, so skip this one
-                return;
-            }
+        // only perform one computation at a time.
+        synchronized (numBlocksPlaced) {
             lastUpdate.set(java.lang.System.currentTimeMillis());
             int x = request.getX();
             int y = request.getY();
@@ -430,6 +424,7 @@ public class SimpleArchitect extends AbstractArchitect {
             } else {
                 sendMessage("Not there! please remove that block again and " + currentInstruction);
             }
+            numBlocksPlaced.incrementAndGet();
         }
     }
 
@@ -493,51 +488,69 @@ public class SimpleArchitect extends AbstractArchitect {
     @Override
     public void handleStatusInformation(StatusMessage request) {
         if (objectiveSet.getCount() > 0) {
+            // only start recording status information after
+            // the first objective was actually computed.
             return;
         }
-        logger.debug("handleStatusInformation " + request);
-        var x = request.getXDirection();
-        var z = request.getZDirection();
-        Orientation newOrientation;
-        if (abs(x) > abs(z)) {
-            // User looks along X-axis
-            if (x > 0) {
-                newOrientation = Orientation.XPLUS;
-            } else {
-                newOrientation = Orientation.XMINUS;
+        var currNumBlocksPlaced = numBlocksPlaced.get();
+        synchronized (numBlocksPlaced) {
+            if (currNumBlocksPlaced < numBlocksPlaced.get()) {
+                // instructions for a new object were planned after we started waiting,
+                // our information is outdated, so skip this one
+                return;
             }
-        } else {
-            // looking along Z axis
-            if (z > 0) {
-                newOrientation = Orientation.ZPLUS;
+            logger.debug("handleStatusInformation " + request);
+            var x = request.getXDirection();
+            var z = request.getZDirection();
+            Orientation newOrientation;
+            if (abs(x) > abs(z)) {
+                // User looks along X-axis
+                if (x > 0) {
+                    newOrientation = Orientation.XPLUS;
+                } else {
+                    newOrientation = Orientation.XMINUS;
+                }
             } else {
-                newOrientation = Orientation.ZMINUS;
+                // looking along Z axis
+                if (z > 0) {
+                    newOrientation = Orientation.ZPLUS;
+                } else {
+                    newOrientation = Orientation.ZMINUS;
+                }
             }
-        }
 
-        boolean orientationStayed = newOrientation == lastOrientation;
-        lastOrientation = newOrientation;
+            boolean orientationStayed = newOrientation == lastOrientation;
+            lastOrientation = newOrientation;
 
-        // only re-send the current instruction after five seconds.
-        if (orientationStayed && lastUpdate.get() + 5000 > java.lang.System.currentTimeMillis()) {
-            return;
-        }
-        if (!orientationStayed) {
-            var newInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
-            if (! newInstruction.contains("*NONE*")) {
-                currentInstruction = newInstruction;
-            } else {
-                logger.warn("Failed to build instruction");
-                log("{\"world\":"+ toJson(world)
-                        + ", \"target\": " + plan.get(0).asJson()
-                        + ", \"orientation\": \"" + newOrientation + "\""
-                        , "NLGFailure");
+            // only re-send the current instruction after five seconds.
+            if (orientationStayed && lastUpdate.get() + 5000 > java.lang.System.currentTimeMillis()) {
+                return;
             }
-            currentInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
-            log(newOrientation.toString(), "NewOrientation");
+            if (!orientationStayed) {
+                log(newOrientation.toString(), "NewOrientation");
+                var newInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
+                if (newInstruction.equals(currentInstruction)
+                        && lastUpdate.get() + 5000 > java.lang.System.currentTimeMillis()) {
+                    // we turned but five seconds are not over and the turning did not
+                    // change the instruction, so no need to send again.
+                    return;
+                }
+                if (!newInstruction.contains("*NONE*")) {
+                    currentInstruction = newInstruction;
+                } else {
+                    // We still want to say the same thing but somehow fail.
+                    // log the problem and hide from the user.
+                    logger.warn("Failed to build instruction");
+                    log("{\"world\":" + toJson(world)
+                                    + ", \"target\": " + plan.get(0).asJson()
+                                    + ", \"orientation\": \"" + newOrientation + "\""
+                            , "NLGFailure");
+                    return;
+                }
+            }
+            lastUpdate.set(java.lang.System.currentTimeMillis());
+            sendMessage(currentInstruction);
         }
-        lastUpdate.set(java.lang.System.currentTimeMillis());
-        sendMessage(currentInstruction);
     }
 
     private String toJson(Collection<MinecraftObject> c) {
