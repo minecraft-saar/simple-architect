@@ -41,7 +41,7 @@ import static java.lang.Math.abs;
 
 public class SimpleArchitect extends AbstractArchitect {
     private static final CostFunction.InstructionLevel instructionlevel = CostFunction.InstructionLevel.valueOf(
-            System.getProperty("instructionlevel", "BLOCK"));
+            System.getProperty("instructionlevel", "MEDIUM"));
 
     private static Logger logger = LogManager.getLogger(SimpleArchitect.class);
     protected Set<MinecraftObject> it = Set.of();
@@ -296,28 +296,34 @@ public class SimpleArchitect extends AbstractArchitect {
                     result.add(new Row("row", x1, z1, x2, z2, y1));
                     break;
                 case "(!build-wall-starting":
-                    result.add(new IntroductionMessage(createWall(taskArray), true, "wall"));
+                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                        result.add(new IntroductionMessage(createWall(taskArray), true, "wall"));
                     break;
                 case "(!build-wall-finished":
-                    result.add(new IntroductionMessage(createWall(taskArray), false, "wall"));
+                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                        result.add(new IntroductionMessage(createWall(taskArray), false, "wall"));
                     break;
                 case "(!build-wall":
                     result.add(createWall(taskArray));
                     break;
                 case "(!build-railing-starting":
-                    result.add(new IntroductionMessage(createRailing(taskArray), true, "railing"));
+                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                        result.add(new IntroductionMessage(createRailing(taskArray), true, "railing"));
                     break;
                 case "(!build-railing-finished":
-                    result.add(new IntroductionMessage(createRailing(taskArray), false, "railing"));
+                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                        result.add(new IntroductionMessage(createRailing(taskArray), false, "railing"));
                     break;
                 case "(!build-railing":
                     result.add(createRailing(taskArray));
                     break;
                 case "(!build-floor-starting":
-                    result.add(new IntroductionMessage(createFloor(taskArray), true, "floor"));
+                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                        result.add(new IntroductionMessage(createFloor(taskArray), true, "floor"));
                     break;
                 case "(!build-floor-finished":
-                    result.add(new IntroductionMessage(createFloor(taskArray), false, "floor"));
+                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                        result.add(new IntroductionMessage(createFloor(taskArray), false, "floor"));
                     break;
                 case "(!build-floor":
                     result.add(createFloor(taskArray));
@@ -393,6 +399,9 @@ public class SimpleArchitect extends AbstractArchitect {
                             NewGameState.SuccessfullyFinished);
                 } else {
                     setObjective(plan.get(0));
+                    if(plan.isEmpty()){
+                        return;
+                    }
                     sendMessage("Great! now " + currentInstruction);
                 }
                 return;
@@ -425,6 +434,10 @@ public class SimpleArchitect extends AbstractArchitect {
                 sendMessage("Great! You finished building a " + obj.name);
             }
             plan.remove(0);
+            if (plan.isEmpty()) {
+                sendMessage("Congratulations, you are done building a " + scenario,
+                        NewGameState.SuccessfullyFinished);
+            }
             objective = plan.get(0);
         }
         log(objective.asJson(), "CurrentObject");
