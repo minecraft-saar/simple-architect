@@ -11,8 +11,18 @@ public class Main {
      * Starts an architect server.
      */
     public static void main(String[] args) throws IOException, InterruptedException {
+	int port = 10000;
+	if (args.length == 1) {
+	    try{
+		port = Integer.parseInt(args[0]);
+	    } catch (Exception ignored) {
+		System.err.println("Usage: one argument only, defining the port on which the ArchitectServer listens.");
+		System.exit(1);
+		    
+	    }
+	}
         ArchitectFactory factory = () -> new SimpleArchitect();
-        ArchitectServer server = new ArchitectServer(10000, factory);
+        ArchitectServer server = new ArchitectServer(port, factory);
         server.start();
         server.blockUntilShutdown();
     }

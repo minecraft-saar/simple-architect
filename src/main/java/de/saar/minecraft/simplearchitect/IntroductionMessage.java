@@ -38,9 +38,4 @@ public class IntroductionMessage extends MinecraftObject {
     public String toString() {
         return "Introduction Object for: " + object.toString();
     }
-
-    public String asJson() {
-        return object.asJson();
-    }
-
 }

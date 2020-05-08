@@ -21,7 +21,6 @@ import umd.cs.shop.JSJshop;
 import umd.cs.shop.JSState;
 import umd.cs.shop.JSPredicateForm;
 import umd.cs.shop.JSTerm;
-import umd.cs.shop.JSPlan;
 import umd.cs.shop.JSTaskAtom;
 import umd.cs.shop.costs.CostFunction;
 
@@ -29,6 +28,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,7 +43,7 @@ public class SimpleArchitect extends AbstractArchitect {
     private static final CostFunction.InstructionLevel instructionlevel = CostFunction.InstructionLevel.valueOf(
             System.getProperty("instructionlevel", "MEDIUM"));
 
-    private static Logger logger = LogManager.getLogger(SimpleArchitect.class);
+    private static final Logger logger = LogManager.getLogger(SimpleArchitect.class);
     protected Set<MinecraftObject> it = Set.of();
     private List<MinecraftObject> plan;
     private Set<Block> currentInstructionBlocksLeft = Set.of();
@@ -54,8 +54,8 @@ public class SimpleArchitect extends AbstractArchitect {
     protected String currentInstruction;
     protected Orientation lastOrientation = Orientation.ZPLUS;
     protected String scenario;
-    private CountDownLatch readyCounter = new CountDownLatch(1);
-    private CountDownLatch objectiveSet = new CountDownLatch(1);
+    private final CountDownLatch readyCounter = new CountDownLatch(1);
+    private final CountDownLatch objectiveSet = new CountDownLatch(1);
 
     protected Set<Block> alreadyPlacedBlocks = new HashSet<>();
 
@@ -76,6 +76,10 @@ public class SimpleArchitect extends AbstractArchitect {
         sendMessage("you can move around with w,a,s,d and look around with your mouse.");
         sendMessage("Place blocks with the RIGHT mouse button, delete with LEFT mouse button.");
         sendMessage("press spacebar twice to fly and shift to dive.");
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ignored) {
+        }
         // This is the first time we can log something
         // log the complete plan and the current object.
         try {
@@ -376,7 +380,7 @@ public class SimpleArchitect extends AbstractArchitect {
             int y = request.getY();
             int z = request.getZ();
             var blockPlaced = new Block(x, y, z);
-            String response = "";
+            world.add(blockPlaced);
             if (plan.isEmpty()) {
                 sendMessage("you are done, no more changes needed!");
                 return;
@@ -389,10 +393,17 @@ public class SimpleArchitect extends AbstractArchitect {
              */
             // current object is complete
             if (currentInstructionBlocksLeft.size() == 1 && currentInstructionBlocksLeft.contains(blockPlaced)) {
-                world.add(blockPlaced);
                 world.add(plan.get(0));
                 alreadyPlacedBlocks.add(blockPlaced);
-                it = Set.of(blockPlaced);
+                // we can refer to the HLO and the block as it.
+                if (! blockPlaced.equals(plan.get(0))) {
+                    it = Set.of(blockPlaced, plan.get(0));
+                } else {
+                    // Set.of cannot deal with multiple elements being the same,
+                    // therefore we check this in this if/else clause.
+                    // Both are the same if we instructed to build a single block.
+                    it = Set.of(blockPlaced);
+                }
                 plan.remove(0);
                 if (plan.isEmpty()) {
                     sendMessage("Congratulations, you are done building a " + scenario,
@@ -412,7 +423,10 @@ public class SimpleArchitect extends AbstractArchitect {
                 // Just note and do nothing for now
                 currentInstructionBlocksLeft.remove(blockPlaced);
                 alreadyPlacedBlocks.add(blockPlaced);
-                it = Set.of(blockPlaced);
+                // We are in the middle of an ongoing instruction.
+                // Therefore, we still use the reference frame from the
+                // start of the interaction and do not update "it".
+                // it = Set.of(blockPlaced);
             } else {
                 sendMessage("Not there! please remove that block again and " + currentInstruction);
             }
@@ -440,6 +454,8 @@ public class SimpleArchitect extends AbstractArchitect {
             }
             objective = plan.get(0);
         }
+        log(toJson(world),
+                "CurrentWorld");
         log(objective.asJson(), "CurrentObject");
         currentInstructionBlocksLeft = objective.getBlocks();
         currentInstructionBlocksLeft.removeAll(alreadyPlacedBlocks);
@@ -506,6 +522,16 @@ public class SimpleArchitect extends AbstractArchitect {
             return;
         }
         if (!orientationStayed) {
+            var newInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
+            if (! newInstruction.contains("*NONE*")) {
+                currentInstruction = newInstruction;
+            } else {
+                logger.warn("Failed to build instruction");
+                log("{\"world\":"+ toJson(world)
+                        + ", \"target\": " + plan.get(0).asJson()
+                        + ", \"orientation\": \"" + newOrientation + "\""
+                        , "NLGFailure");
+            }
             currentInstruction = generateResponse(world, plan.get(0), it, lastOrientation);
             log(newOrientation.toString(), "NewOrientation");
         }
@@ -513,6 +539,13 @@ public class SimpleArchitect extends AbstractArchitect {
         sendMessage(currentInstruction);
     }
 
+    private String toJson(Collection<MinecraftObject> c) {
+        return "["
+                + c.stream()
+                .map(MinecraftObject::asJson)
+                .collect(Collectors.joining(", "))
+                + "]";
+    }
 
     @Override
     public String getArchitectInformation() {
