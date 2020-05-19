@@ -403,11 +403,15 @@ public class SimpleArchitect extends AbstractArchitect {
                     sendMessage("Congratulations, you are done building a " + scenario,
                             NewGameState.SuccessfullyFinished);
                 } else {
-                    setObjective(plan.get(0));
+                    boolean introductionGenerated = setObjective(plan.get(0));
                     if(plan.isEmpty()){
                         return;
                     }
-                    sendMessage("Great! now " + currentInstruction);
+                    if (introductionGenerated) {
+                        sendMessage(currentInstruction);
+                    } else {
+                        sendMessage("Great! now " + currentInstruction);
+                    }
                 }
                 return;
             }
@@ -430,10 +434,12 @@ public class SimpleArchitect extends AbstractArchitect {
 
     /**
      * Sets the new objective, computes which blocks are still missing for it and updates the instruction.
+     * @return true if we processed at least one intoduction message from the plan
      */
-    private void setObjective(MinecraftObject objective) {
-
+    private boolean setObjective(MinecraftObject objective) {
+        boolean introductionProcessed = false;
         while (objective instanceof IntroductionMessage) {
+            introductionProcessed = true;
             IntroductionMessage obj = (IntroductionMessage) objective;
             log(obj.asJson(), "CurrentObject");
             //String message = generateResponse(world, obj.object, it, lastOrientation);
@@ -465,6 +471,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 .collect(Collectors.joining(",\n"));
         log(currentObjectsLeft, "BlocksCurrentObjectLeft");
         currentInstruction = generateResponse(world, objective, it, lastOrientation);
+        return introductionProcessed;
     }
 
 
@@ -547,6 +554,7 @@ public class SimpleArchitect extends AbstractArchitect {
                     logger.warn("Failed to build instruction");
                     log("{\"world\":" + toJson(world)
                                     + ", \"target\": " + plan.get(0).asJson()
+                                    + ", \"it\": " + toJson(it)
                                     + ", \"orientation\": \"" + newOrientation + "\""
                             , "NLGFailure");
                     return;
