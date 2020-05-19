@@ -442,6 +442,10 @@ public class SimpleArchitect extends AbstractArchitect {
             } else {
                 sendMessage("Great! You finished building a " + obj.name);
                 world.add(obj.object);
+                var newit = new HashSet<MinecraftObject>();
+                newit.addAll(it);
+                newit.add(obj.object);
+                it = newit;
             }
             plan.remove(0);
             if (plan.isEmpty()) {
