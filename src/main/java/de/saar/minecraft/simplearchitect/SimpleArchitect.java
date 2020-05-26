@@ -59,12 +59,6 @@ public class SimpleArchitect extends AbstractArchitect {
 
     protected Set<Block> alreadyPlacedBlocks = new HashSet<>();
 
-    //enum InstructionLevel{
-    //    BLOCK,
-    //    MEDIUM,
-    //    HIGHLEVEL
-    //}
-
     public SimpleArchitect() {
 
     }
@@ -73,8 +67,9 @@ public class SimpleArchitect extends AbstractArchitect {
     public void playerReady() {
         logger.debug("received playerReady");
         sendMessage("Welcome! I will try to instruct you to build a " + scenario);
-        sendMessage("you can move around with w,a,s,d and look around with your mouse.");
-        sendMessage("Place blocks with the RIGHT mouse button, delete with LEFT mouse button.");
+        // these information will be given externally.
+        // sendMessage("you can move around with w,a,s,d and look around with your mouse.");
+        // sendMessage("Place blocks with the RIGHT mouse button, delete with LEFT mouse button.");
         sendMessage("press spacebar twice to fly and shift to dive.");
         try {
             Thread.sleep(1000);
