@@ -54,8 +54,11 @@ public class SimpleArchitect extends AbstractArchitect {
     protected String currentInstruction;
     protected Orientation lastOrientation = Orientation.ZPLUS;
     protected String scenario;
+    private final String secretWord = "SecretWord";
     private final CountDownLatch readyCounter = new CountDownLatch(1);
     private final CountDownLatch objectiveSet = new CountDownLatch(1);
+    private long startTime;
+    private boolean notTimeOutYet = true;
 
     protected Set<Block> alreadyPlacedBlocks = new HashSet<>();
 
@@ -89,6 +92,7 @@ public class SimpleArchitect extends AbstractArchitect {
         log(planString, "InitialPlan");
         setObjective(plan.get(0));
         objectiveSet.countDown();
+        startTime = java.lang.System.currentTimeMillis();
     }
 
     private static InputStream getResourceStream(String resName) {
@@ -110,7 +114,7 @@ public class SimpleArchitect extends AbstractArchitect {
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
         String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
         planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, instructionlevel);
-        if(scenario.equals("house")){
+        if (scenario.equals("house")) {
             switch (instructionlevel) {
                 case BLOCK:
                     return getResourceAsString("/de/saar/minecraft/domains/" + "house-block.plan");
@@ -121,7 +125,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 default:
                     return "";
             }
-        } else if(scenario.equals("bridge")){
+        } else if (scenario.equals("bridge")) {
             switch (instructionlevel) {
                 case BLOCK:
                     return getResourceAsString("/de/saar/minecraft/domains/" + "bridge-block.plan");
@@ -295,33 +299,33 @@ public class SimpleArchitect extends AbstractArchitect {
                     result.add(new Row("row", x1, z1, x2, z2, y1));
                     break;
                 case "(!build-wall-starting":
-                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createWall(taskArray), true, "wall"));
                     break;
                 case "(!build-wall-finished":
-                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createWall(taskArray), false, "wall"));
                     break;
                 case "(!build-wall":
                     result.add(createWall(taskArray));
                     break;
                 case "(!build-railing-starting":
-                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createRailing(taskArray), true, "railing"));
                     break;
                 case "(!build-railing-finished":
-                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createRailing(taskArray), false, "railing"));
                     break;
                 case "(!build-railing":
                     result.add(createRailing(taskArray));
                     break;
                 case "(!build-floor-starting":
-                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createFloor(taskArray), true, "floor"));
                     break;
                 case "(!build-floor-finished":
-                    if(instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createFloor(taskArray), false, "floor"));
                     break;
                 case "(!build-floor":
@@ -364,7 +368,8 @@ public class SimpleArchitect extends AbstractArchitect {
     public void handleBlockPlaced(BlockPlacedMessage request) {
         // only perform one computation at a time.
         synchronized (numBlocksPlaced) {
-            lastUpdate.set(java.lang.System.currentTimeMillis());
+            long currentTime = java.lang.System.currentTimeMillis();
+            lastUpdate.set(currentTime);
             int x = request.getX();
             int y = request.getY();
             int z = request.getZ();
@@ -385,7 +390,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 world.add(plan.get(0));
                 alreadyPlacedBlocks.add(blockPlaced);
                 // we can refer to the HLO and the block as it.
-                if (! blockPlaced.equals(plan.get(0))) {
+                if (!blockPlaced.equals(plan.get(0))) {
                     it = Set.of(blockPlaced, plan.get(0));
                 } else {
                     // Set.of cannot deal with multiple elements being the same,
@@ -397,14 +402,16 @@ public class SimpleArchitect extends AbstractArchitect {
                 if (plan.isEmpty()) {
                     sendMessage("Congratulations, you are done building a " + scenario,
                             NewGameState.SuccessfullyFinished);
+                    sendMessage("Thank you for participating in our experiment. The secret word is: " + secretWord);
                 } else {
                     boolean introductionGenerated = setObjective(plan.get(0));
-                    if(plan.isEmpty()){
+                    if (plan.isEmpty()) {
                         return;
                     }
                     if (introductionGenerated) {
                         sendMessage(currentInstruction);
                     } else {
+                        checkTimeOut(currentTime);
                         sendMessage("Great! now " + currentInstruction);
                     }
                 }
@@ -427,8 +434,25 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
+    private void checkTimeOut(long currentTime) {
+        if (currentTime - startTime >= 600000 && notTimeOutYet) { //600 000 milliseconds are 10 Minutes
+            notTimeOutYet = false;
+            new Thread(() -> {
+                while (true) {
+                    sendMessage("Thank you for participating in our experiment. The secret word is: " + secretWord);
+                    try {
+                        Thread.sleep(30 * 1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+    }
+
     /**
      * Sets the new objective, computes which blocks are still missing for it and updates the instruction.
+     *
      * @return true if we processed at least one intoduction message from the plan
      */
     private boolean setObjective(MinecraftObject objective) {
