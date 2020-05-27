@@ -114,31 +114,8 @@ public class SimpleArchitect extends AbstractArchitect {
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
         String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
         planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, instructionlevel);
-        if (scenario.equals("house")) {
-            switch (instructionlevel) {
-                case BLOCK:
-                    return getResourceAsString("/de/saar/minecraft/domains/" + "house-block.plan");
-                case MEDIUM:
-                    return getResourceAsString("/de/saar/minecraft/domains/" + "house-medium.plan");
-                case HIGHLEVEL:
-                    return getResourceAsString("/de/saar/minecraft/domains/" + "house-highlevel.plan");
-                default:
-                    return "";
-            }
-        } else if (scenario.equals("bridge")) {
-            switch (instructionlevel) {
-                case BLOCK:
-                    return getResourceAsString("/de/saar/minecraft/domains/" + "bridge-block.plan");
-                case MEDIUM:
-                    return getResourceAsString("/de/saar/minecraft/domains/" + "bridge-medium.plan");
-                case HIGHLEVEL:
-                    return getResourceAsString("/de/saar/minecraft/domains/" + "bridge-highlevel.plan");
-                default:
-                    return "";
-            }
-        } else {
-            return "";
-        }
+        String precomputedFileName = scenario + "-" + instructionlevel.name().toLowerCase() + ".plan";
+        return getResourceAsString("/de/saar/minecraft/domains/" + precomputedFileName);
     }
 
     @Override
