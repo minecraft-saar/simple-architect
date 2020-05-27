@@ -329,6 +329,12 @@ public class SimpleArchitect extends AbstractArchitect {
             }
             JSTerm data = (JSTerm) term.elementAt(1);
             String type = (String) data.elementAt(0);
+            if (type.equals("water")) {
+                // water behaves differently from normal blocks,
+                // e.g. you can still put blocks into water blocks
+                // this confuses the tracking and we therefore ignore water.
+                continue;
+            }
             JSTerm tmp = (JSTerm) term.elementAt(2);
             int x = (int) Double.parseDouble(tmp.toStr().toString());
             tmp = (JSTerm) term.elementAt(3);
