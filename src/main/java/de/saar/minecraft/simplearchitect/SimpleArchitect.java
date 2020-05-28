@@ -58,9 +58,14 @@ public class SimpleArchitect extends AbstractArchitect {
     private final CountDownLatch readyCounter = new CountDownLatch(1);
     private final CountDownLatch objectiveSet = new CountDownLatch(1);
     private long startTime;
-    private boolean notTimeOutYet = true;
+    private boolean SecretWordThreadStarted = false;
+    private int numCorrectBlocks = 0;
 
+    /** These are all blocks that exist in the world (except water block)*/
     protected Set<Block> alreadyPlacedBlocks = new HashSet<>();
+    /** These are blocks that were placed but we did not instruct them (yet)
+    They might be part of what we want to instruct later on though.*/
+    protected Set<Block> incorrectlyPlacedBlocks = new HashSet<>();
 
     public SimpleArchitect() {
 
@@ -68,6 +73,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public void playerReady() {
+        startTime = java.lang.System.currentTimeMillis();
         logger.debug("received playerReady");
         sendMessage("Welcome! I will try to instruct you to build a " + scenario);
         // these information will be given externally.
@@ -90,9 +96,9 @@ public class SimpleArchitect extends AbstractArchitect {
                 .map(MinecraftObject::asJson)
                 .collect(Collectors.joining(",\n")) + "]";
         log(planString, "InitialPlan");
-        setObjective(plan.get(0));
+        var instructions = computeNextInstructions();
+        sendMessages(instructions, true);
         objectiveSet.countDown();
-        startTime = java.lang.System.currentTimeMillis();
     }
 
     private static InputStream getResourceStream(String resName) {
@@ -352,6 +358,7 @@ public class SimpleArchitect extends AbstractArchitect {
         // only perform one computation at a time.
         synchronized (numBlocksPlaced) {
             long currentTime = java.lang.System.currentTimeMillis();
+            checkTimeOut();
             lastUpdate.set(currentTime);
             int x = request.getX();
             int y = request.getY();
@@ -370,6 +377,7 @@ public class SimpleArchitect extends AbstractArchitect {
              */
             // current object is complete
             if (currentInstructionBlocksLeft.size() == 1 && currentInstructionBlocksLeft.contains(blockPlaced)) {
+                numCorrectBlocks += 1;
                 world.add(plan.get(0));
                 alreadyPlacedBlocks.add(blockPlaced);
                 // we can refer to the HLO and the block as it.
@@ -382,28 +390,19 @@ public class SimpleArchitect extends AbstractArchitect {
                     it = Set.of(blockPlaced);
                 }
                 plan.remove(0);
+                updateInstructions();
                 if (plan.isEmpty()) {
                     sendMessage("Congratulations, you are done building a " + scenario,
                             NewGameState.SuccessfullyFinished);
-                    sendMessage("Thank you for participating in our experiment. The secret word is: " + secretWord);
-                } else {
-                    boolean introductionGenerated = setObjective(plan.get(0));
-                    if (plan.isEmpty()) {
-                        return;
-                    }
-                    if (introductionGenerated) {
-                        sendMessage(currentInstruction);
-                    } else {
-                        checkTimeOut(currentTime);
-                        sendMessage("Great! now " + currentInstruction);
-                    }
+                    checkTimeOut();
                 }
                 return;
-            }
-            //
+            } // end current objective is complete
             if (currentInstructionBlocksLeft.contains(blockPlaced)) {
+                // second case:
                 // correct block, but objective not complete
                 // Just note and do nothing for now
+                numCorrectBlocks += 1;
                 currentInstructionBlocksLeft.remove(blockPlaced);
                 alreadyPlacedBlocks.add(blockPlaced);
                 // We are in the middle of an ongoing instruction.
@@ -411,17 +410,124 @@ public class SimpleArchitect extends AbstractArchitect {
                 // start of the interaction and do not update "it".
                 // it = Set.of(blockPlaced);
             } else {
+                // third case: incorrect block
+                incorrectlyPlacedBlocks.add(blockPlaced);
+                alreadyPlacedBlocks.add(blockPlaced);
                 sendMessage("Not there! please remove that block again and " + currentInstruction);
             }
             numBlocksPlaced.incrementAndGet();
         }
     }
 
-    private void checkTimeOut(long currentTime) {
-        if (currentTime - startTime >= 600000 && notTimeOutYet) { //600 000 milliseconds are 10 Minutes
-            notTimeOutYet = false;
+    private void sendMessages(List<String> responses) {
+        sendMessages(responses, true);
+    }
+
+    private void sendMessages(List<String> responses, boolean sendGreat) {
+        boolean isFirst = true;
+        for (var response: responses) {
+            if (isFirst) {
+                if (sendGreat && ! response.startsWith("Great")) {
+                    response = "Great! now " + response;
+                }
+            } else {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+            }
+            sendMessage(response);
+            isFirst = false;
+        }
+    }
+
+    /**
+     * Computes all instructions we now have to send,
+     * sends them to the player and sets currentInstruction
+     * to the last of these instructions.
+     */
+    private void updateInstructions() {
+        var newInstructions = computeNextInstructions();
+        sendMessages(newInstructions);
+    }
+
+    /**
+     * Computes all instructions that need to be instructed now.
+     * Removes all elements from the plan that are completeled without
+     * the need for user interaction (e.g. introduction objects)
+     * or objects we wanted to instruct but which were already built by
+     * the user.
+     * @return A list of instructions that should be sent to the user
+     */
+    private List<String> computeNextInstructions() {
+        if (plan.isEmpty()) {
+            return new ArrayList<>(); // nothing left to instruct
+        }
+        var toInstruct = plan.get(0);
+        // iterate over all introduction messages we might need
+        if (toInstruct instanceof IntroductionMessage) {
+            plan.remove(0);
+            IntroductionMessage obj = (IntroductionMessage) toInstruct;
+            log(obj.asJson(), "CurrentObject");
+            //String message = generateResponse(world, obj.object, it, lastOrientation);
+            if (obj.starting) {
+                var result = computeNextInstructions();
+                if (!result.isEmpty()) { // only instruct if there is something to instruct
+                    result.add(0, "Now I will teach you how to build a " + obj.name);
+                }
+                return result;
+            } else {
+                world.add(obj.object);
+                var newit = new HashSet<>(it);
+                newit.add(obj.object);
+                it = newit;
+                var result = new ArrayList<String>();
+                result.add( "Great! You finished building a " + obj.name);
+                result.addAll(computeNextInstructions());
+                return result;
+            }
+        }
+        // Other case: not an introduction
+        log(toJson(world),
+                "CurrentWorld");
+        log(toInstruct.asJson(), "CurrentObject");
+        currentInstructionBlocksLeft = toInstruct.getBlocks();
+        // All blocks that were incorrectly placed before
+        // and are part ot the thing we want to instruct are now not
+        // incorrect anymore.  Otherwise, removing such a block
+        // later on would not be seen as incorrect.
+        incorrectlyPlacedBlocks.removeAll(currentInstructionBlocksLeft);
+        currentInstructionBlocksLeft.removeAll(alreadyPlacedBlocks);
+        String currentObjectsLeft = currentInstructionBlocksLeft.
+                stream().
+                map(MinecraftObject::asJson)
+                .collect(Collectors.joining(",\n"));
+        log(currentObjectsLeft, "BlocksCurrentObjectLeft");
+        if (currentInstructionBlocksLeft.isEmpty()) {
+            // can happen e.g. if we want to instruct to place a block
+            // that was incorrectly placed before already
+            plan.remove(0);
+            return computeNextInstructions();
+        }
+        currentInstruction = generateResponse(world, toInstruct, it, lastOrientation);
+        var result = new ArrayList<String>();
+        result.add(currentInstruction);
+        return result;
+    }
+
+    /**
+     * Checks whether the secret word for payment should be shown and if so starts a thread for that.
+     */
+    private void checkTimeOut() {
+        if (SecretWordThreadStarted) {
+            return;
+        }
+        boolean timePassed = System.currentTimeMillis() - startTime >= 10*60*1000; // 10 minutes
+        if (plan.isEmpty() || numCorrectBlocks > 5  && timePassed) {
+            SecretWordThreadStarted = true;
             new Thread(() -> {
                 while (true) {
+                    logger.info("timeout reached: " + System.currentTimeMillis() + " start: "+startTime);
                     sendMessage("Thank you for participating in our experiment. The secret word is: " + secretWord);
                     try {
                         Thread.sleep(30 * 1000);
@@ -433,50 +539,6 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
-    /**
-     * Sets the new objective, computes which blocks are still missing for it and updates the instruction.
-     *
-     * @return true if we processed at least one intoduction message from the plan
-     */
-    private boolean setObjective(MinecraftObject objective) {
-        boolean introductionProcessed = false;
-        while (objective instanceof IntroductionMessage) {
-            introductionProcessed = true;
-            IntroductionMessage obj = (IntroductionMessage) objective;
-            log(obj.asJson(), "CurrentObject");
-            //String message = generateResponse(world, obj.object, it, lastOrientation);
-            if (obj.starting) {
-                sendMessage("Now I will teach you how to build a " + obj.name);
-            } else {
-                sendMessage("Great! You finished building a " + obj.name);
-                world.add(obj.object);
-                var newit = new HashSet<MinecraftObject>();
-                newit.addAll(it);
-                newit.add(obj.object);
-                it = newit;
-            }
-            plan.remove(0);
-            if (plan.isEmpty()) {
-                sendMessage("Congratulations, you are done building a " + scenario,
-                        NewGameState.SuccessfullyFinished);
-            }
-            objective = plan.get(0);
-        }
-        log(toJson(world),
-                "CurrentWorld");
-        log(objective.asJson(), "CurrentObject");
-        currentInstructionBlocksLeft = objective.getBlocks();
-        currentInstructionBlocksLeft.removeAll(alreadyPlacedBlocks);
-        String currentObjectsLeft = currentInstructionBlocksLeft.
-                stream().
-                map(MinecraftObject::asJson)
-                .collect(Collectors.joining(",\n"));
-        log(currentObjectsLeft, "BlocksCurrentObjectLeft");
-        currentInstruction = generateResponse(world, objective, it, lastOrientation);
-        return introductionProcessed;
-    }
-
-
     @Override
     public void handleBlockDestroyed(BlockDestroyedMessage request) {
         // TODO add logic to only say this if the previous block was correct
@@ -484,17 +546,25 @@ public class SimpleArchitect extends AbstractArchitect {
         int y = request.getY();
         int z = request.getZ();
         var block = new Block(x, y, z);
+        // We instructed the user to remove the block,
+        // so simply remove it from our list.
+        if (incorrectlyPlacedBlocks.contains(block)) {
+            it = Set.of();
+            alreadyPlacedBlocks.remove(block);
+            return;
+        }
         // If a block that should be placed is removed again, re-add it to the plan
         // and instruct the user to place this block again
         if (alreadyPlacedBlocks.contains(block)) {
             it = Set.of(); // We cannot say "previous block" when the last action was a removal
             alreadyPlacedBlocks.remove(block);
             plan.add(0, block);
-            setObjective(block);
+            var newInstructions = computeNextInstructions();
+            sendMessage(newInstructions.get(0));
             sendMessage("Please add this block again.");
             lastUpdate.set(java.lang.System.currentTimeMillis());
         } else {
-            // Just ignore the vandalism.
+            // Just ignore the vandalism to preexisting blocks.
         }
     }
 
