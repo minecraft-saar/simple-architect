@@ -54,12 +54,13 @@ public class SimpleArchitect extends AbstractArchitect {
     protected String currentInstruction;
     protected Orientation lastOrientation = Orientation.ZPLUS;
     protected String scenario;
-    private final String secretWord = "SecretWord";
     private final CountDownLatch readyCounter = new CountDownLatch(1);
     private final CountDownLatch objectiveSet = new CountDownLatch(1);
     private long startTime;
     private boolean SecretWordThreadStarted = false;
     private int numCorrectBlocks = 0;
+
+    private SimpleArchitectConfiguration config;
 
     /** These are all blocks that exist in the world (except water block)*/
     protected Set<Block> alreadyPlacedBlocks = new HashSet<>();
@@ -67,8 +68,8 @@ public class SimpleArchitect extends AbstractArchitect {
     They might be part of what we want to instruct later on though.*/
     protected Set<Block> incorrectlyPlacedBlocks = new HashSet<>();
 
-    public SimpleArchitect() {
-
+    public SimpleArchitect(SimpleArchitectConfiguration config) {
+        this.config = config;
     }
 
     @Override
@@ -519,16 +520,17 @@ public class SimpleArchitect extends AbstractArchitect {
      * Checks whether the secret word for payment should be shown and if so starts a thread for that.
      */
     private void checkTimeOut() {
-        if (SecretWordThreadStarted) {
+        if (SecretWordThreadStarted || !config.getShowSecret()) {
             return;
         }
-        boolean timePassed = System.currentTimeMillis() - startTime >= 10*60*1000; // 10 minutes
-        if (plan.isEmpty() || numCorrectBlocks > 5  && timePassed) {
+        boolean timePassed = System.currentTimeMillis() - startTime >= config.getTimeoutMinutes()*60*1000; // 10 minutes
+        if (plan.isEmpty() || numCorrectBlocks >= config.getTimeoutMinBlocks()  && timePassed) {
             SecretWordThreadStarted = true;
             new Thread(() -> {
                 while (true) {
                     logger.info("timeout reached: " + System.currentTimeMillis() + " start: "+startTime);
-                    sendMessage("Thank you for participating in our experiment. The secret word is: " + secretWord);
+                    sendMessage("Thank you for participating in our experiment. The secret word is: "
+                            + config.getSecretWord());
                     try {
                         Thread.sleep(30 * 1000);
                     } catch (InterruptedException e) {
