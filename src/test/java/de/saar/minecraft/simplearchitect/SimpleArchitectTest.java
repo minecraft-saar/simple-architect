@@ -10,7 +10,7 @@ import static org.junit.Assert.assertTrue;
 public class SimpleArchitectTest {
     @Test
     public void testOneInstruction() {
-        var architect = new SimpleArchitect();
+        var architect = new SimpleArchitect(new SimpleArchitectConfiguration());
         architect.initialize(WorldSelectMessage.newBuilder().setGameId(1).setName("house").build());
         var plan = architect.computePlan("house");
         assertTrue(plan.size() > 10);
