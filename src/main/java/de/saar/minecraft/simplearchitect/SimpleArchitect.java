@@ -237,6 +237,32 @@ public class SimpleArchitect extends AbstractArchitect {
 
     }
 
+    public MinecraftObject createRow(String[] taskArray){
+        int x1, y1, z1, x2, z2, length, dir;
+        x1 = (int) Double.parseDouble(taskArray[1]);
+        y1 = (int) Double.parseDouble(taskArray[2]);
+        z1 = (int) Double.parseDouble(taskArray[3]);
+        length = (int) Double.parseDouble(taskArray[4]);
+        dir = (int) Double.parseDouble(taskArray[5]);
+        //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
+        if (dir == 1) {
+            x2 = x1 + length - 1;
+            z2 = z1;
+        } else if (dir == 2) {
+            x2 = x1;
+            x1 = x1 - length + 1;
+            z2 = z1;
+        } else if (dir == 3) {
+            x2 = x1;
+            z2 = z1;
+            z1 = z1 - length + 1;
+        } else {
+            x2 = x1;
+            z2 = z1 + length - 1;
+        }
+        return new Row("row", x1, z1, x2, z2, y1);
+    }
+
     public List<MinecraftObject> transformPlan(String jshopPlan) {
         var result = new ArrayList<MinecraftObject>();
         String[] tasks = jshopPlan.split("\n");
@@ -256,31 +282,15 @@ public class SimpleArchitect extends AbstractArchitect {
                     result.add(new Block(x1, y1, z1));
                     break;
                 case "(!build-row":
-                    x1 = (int) Double.parseDouble(taskArray[1]);
-                    y1 = (int) Double.parseDouble(taskArray[2]);
-                    z1 = (int) Double.parseDouble(taskArray[3]);
-                    length = (int) Double.parseDouble(taskArray[4]);
-                    dir = (int) Double.parseDouble(taskArray[5]);
-                    //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
-                    if (dir == 1) {
-                        x2 = x1 + length - 1;
-                        z2 = z1;
-                    } else if (dir == 2) {
-                        x2 = x1;
-                        x1 = x1 - length + 1;
-                        z2 = z1;
-                    } else if (dir == 3) {
-                        x2 = x1;
-                        z2 = z1;
-                        z1 = z1 - length + 1;
-                    } else if (dir == 4) {
-                        x2 = x1;
-                        z2 = z1 + length - 1;
-                    } else {
-                        System.err.println("Unkown direction in plan transformation");
-                        break;
-                    }
-                    result.add(new Row("row", x1, z1, x2, z2, y1));
+                    result.add(createRow(taskArray));
+                    break;
+                case "(!build-row-starting":
+                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                        result.add(new IntroductionMessage(createRow(taskArray), true, "row"));
+                    break;
+                case "(!build-row-finished":
+                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                        result.add(new IntroductionMessage(createRow(taskArray), false, "row"));
                     break;
                 case "(!build-wall-starting":
                     if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
