@@ -537,10 +537,17 @@ public class SimpleArchitect extends AbstractArchitect {
         if (plan.isEmpty() || numCorrectBlocks >= config.getTimeoutMinBlocks()  && timePassed) {
             SecretWordThreadStarted = true;
             new Thread(() -> {
+                boolean continueRunning = true;
                 while (true) {
                     logger.info("timeout reached: " + System.currentTimeMillis() + " start: "+startTime);
-                    sendMessage("Thank you for participating in our experiment. The secret word is: "
-                            + config.getSecretWord());
+                    try {
+                        sendMessage("Thank you for participating in our experiment. The secret word is: "
+                                + config.getSecretWord());
+                    } catch (NullPointerException e) {
+                        // A bit hacky, but it means that the message channel was closed. Proper signalling
+                        // would probably better, but time is money ...
+                        continueRunning = false;
+                    }
                     try {
                         Thread.sleep(30 * 1000);
                     } catch (InterruptedException e) {
