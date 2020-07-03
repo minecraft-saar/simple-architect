@@ -565,6 +565,7 @@ public class SimpleArchitect extends AbstractArchitect {
         int y = request.getY();
         int z = request.getZ();
         var block = new Block(x, y, z);
+        world.remove(block);
         // We instructed the user to remove the block,
         // so simply remove it from our list.
         if (incorrectlyPlacedBlocks.contains(block)) {
