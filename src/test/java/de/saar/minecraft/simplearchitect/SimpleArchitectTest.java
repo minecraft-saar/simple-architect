@@ -12,7 +12,7 @@ public class SimpleArchitectTest {
     public void testOneInstruction() {
         var architect = new SimpleArchitect(new SimpleArchitectConfiguration());
         architect.initialize(WorldSelectMessage.newBuilder().setGameId(1).setName("house").build());
-        var plan = architect.computePlan("house");
+        var plan = architect.planCreator.getPlan();
         assertTrue(plan.size() > 10);
         MinecraftObject objective = plan.get(0);
         while (objective instanceof IntroductionMessage) {
@@ -27,7 +27,7 @@ public class SimpleArchitectTest {
             objective = plan.get(0);
         }
         //System.out.println(objective.toString());
-        System.out.println(architect.generateResponse(architect.world,
+        System.out.println(architect.realizer.generateInstruction(architect.world,
                 objective, architect.it, Relation.Orientation.ZPLUS));
     }
 }
