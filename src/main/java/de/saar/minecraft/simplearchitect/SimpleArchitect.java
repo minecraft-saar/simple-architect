@@ -145,6 +145,7 @@ public class SimpleArchitect extends AbstractArchitect {
         planCreator = new PlanCreator(scenario);
         this.plan = planCreator.getPlan();
         this.world = planCreator.getInitialWorld();
+        this.alreadyPlacedBlocks = planCreator.getInitialBlocks();
         logger.debug("initialization done");
         readyCounter.countDown();
     }
