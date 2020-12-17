@@ -44,10 +44,16 @@ public class SimpleArchitect extends AbstractArchitect {
         }
 
         public String toJson() {
+            String treeString;
+            if (tree == null) {
+                treeString = "NULL";
+            } else {
+                treeString = tree.toString();
+            }
             return "{\"message\":\"" +
                     instruction +
                     "\",\"tree\":\"" +
-                    tree.toString() +
+                    treeString +
                     "\",\"new\":" +
                     isNewInstruction +
                     "}";
