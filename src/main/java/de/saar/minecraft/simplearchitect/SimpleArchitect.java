@@ -92,7 +92,7 @@ public class SimpleArchitect extends AbstractArchitect {
     public SimpleArchitect(SimpleArchitectConfiguration config) {
         this.config = config;
         this.realizer = MinecraftRealizer.createRealizer();
-        if (System.getProperty("randomizeWeights", "false").equals("true")) {
+        if (config.getRandomizeWeights()) {
             this.realizer.randomizeExpectedDurations();
         }
     }

@@ -11,6 +11,7 @@ public class SimpleArchitectConfiguration {
     private int timeoutMinBlocks = 5;
     private int timeoutMinutes = 10;
     private boolean showSecret = true;
+    private boolean randomizeWeights = false;
 
    public static SimpleArchitectConfiguration loadYaml(Reader reader) {
         // prepare the YAML reader to read a list of strings
@@ -49,6 +50,14 @@ public class SimpleArchitectConfiguration {
 
     public void setShowSecret(boolean showSecret) {
         this.showSecret = showSecret;
+    }
+
+    public boolean getRandomizeWeights() {
+        return randomizeWeights;
+    }
+
+    public void setRandomizeWeights(boolean randomizeWeights) {
+        this.randomizeWeights = randomizeWeights;
     }
 
     @Override
