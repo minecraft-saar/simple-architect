@@ -98,7 +98,7 @@ public class SimpleArchitect extends AbstractArchitect {
     }
 
     @Override
-    public void playerReady() {
+    public synchronized void playerReady() {
         startTime = java.lang.System.currentTimeMillis();
         logger.debug("received playerReady");
         sendMessage("Welcome! I will try to instruct you to build a " + scenario);
@@ -138,7 +138,7 @@ public class SimpleArchitect extends AbstractArchitect {
     }
 
     @Override
-    public void initialize(WorldSelectMessage message) {
+    public synchronized void initialize(WorldSelectMessage message) {
         logger.debug(() -> "initializing with " + message);
         setGameId(message.getGameId());
         scenario = message.getName();
@@ -156,7 +156,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
 
     @Override
-    public void handleBlockPlaced(BlockPlacedMessage request) {
+    public synchronized void handleBlockPlaced(BlockPlacedMessage request) {
         // only perform one computation at a time.
         synchronized (this) {
             long currentTime = java.lang.System.currentTimeMillis();
@@ -328,7 +328,7 @@ public class SimpleArchitect extends AbstractArchitect {
     /**
      * Checks whether the secret word for payment should be shown and if so starts a thread for that.
      */
-    private void checkTimeOut() {
+    private synchronized void checkTimeOut() {
         if (SecretWordThreadStarted || !config.getShowSecret()) {
             return;
         }
@@ -357,7 +357,7 @@ public class SimpleArchitect extends AbstractArchitect {
     }
 
     @Override
-    public void handleBlockDestroyed(BlockDestroyedMessage request) {
+    public synchronized void handleBlockDestroyed(BlockDestroyedMessage request) {
         int x = request.getX();
         int y = request.getY();
         int z = request.getZ();
@@ -388,7 +388,7 @@ public class SimpleArchitect extends AbstractArchitect {
     }
 
     @Override
-    public void handleStatusInformation(StatusMessage request) {
+    public synchronized void handleStatusInformation(StatusMessage request) {
         if (objectiveSet.getCount() > 0) {
             // only start recording status information after
             // the first objective was actually computed.
