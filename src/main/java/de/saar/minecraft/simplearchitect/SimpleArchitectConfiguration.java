@@ -67,6 +67,7 @@ public class SimpleArchitectConfiguration {
                 ", timoutMinBlocks=" + timeoutMinBlocks +
                 ", timeoutMinutes=" + timeoutMinutes +
                 ", showSecret=" + showSecret +
+                ", randomizeWeights=" + randomizeWeights +
                 '}';
     }
 }

@@ -121,6 +121,8 @@ public class SimpleArchitect extends AbstractArchitect {
         String planString = "[" + plan.stream()
                 .map(MinecraftObject::asJson)
                 .collect(Collectors.joining(",\n")) + "]";
+        var weights = this.realizer.getWeightsAsJson();
+        log(weights, "GrammarWeights");
         log(planString, "InitialPlan");
         var instructions = computeNextInstructions();
         sendMessages(instructions, false);
