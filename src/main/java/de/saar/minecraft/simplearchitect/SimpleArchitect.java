@@ -315,7 +315,9 @@ public class SimpleArchitect extends AbstractArchitect {
             plan.remove(0);
             return computeNextInstructions();
         }
+        var t = System.currentTimeMillis();
         var currentTree = realizer.generateReferringExpressionTree(world, toInstruct, it, lastOrientation);
+        log(String.valueOf(System.currentTimeMillis() - t), "RealizerTiming");
         currentInstruction = new InstructionTuple(
                 toInstruct.getVerb() + " " + realizer.treeToReferringExpression(currentTree),
                 currentTree, 
@@ -340,14 +342,12 @@ public class SimpleArchitect extends AbstractArchitect {
             new Thread(() -> {
                 while (true) {
                     logger.info("timeout reached: " + System.currentTimeMillis() + " start: "+startTime);
-                    try {
-                        sendMessage("Thank you for participating in our experiment. The secret word is: "
-                                + config.getSecretWord());
-                    } catch (NullPointerException e) {
-                        // A bit hacky, but it means that the message channel was closed. Proper signalling
-                        // would probably better, but time is money ...
+                    if (this.playerHasLeft) {
+                        // no player anymore, stop trying to send messages to them
                         break;
                     }
+                    sendMessage("Thank you for participating in our experiment. The secret word is: "
+                            + config.getSecretWord());
                     try {
                         Thread.sleep(30 * 1000);
                     } catch (InterruptedException e) {
@@ -435,7 +435,9 @@ public class SimpleArchitect extends AbstractArchitect {
                 currentInstruction.isNewInstruction = false;
             } else {
                 log(newOrientation.toString(), "NewOrientation");
+                var t = System.currentTimeMillis();
                 var newInstruction = realizer.generateReferringExpressionTree(world, plan.get(0), it, lastOrientation);
+                log(String.valueOf(System.currentTimeMillis() - t), "RealizerTiming");
                 if (currentInstruction.tree.equals(newInstruction)
                         && lastUpdate.get() + RESEND_INTERVAL > java.lang.System.currentTimeMillis()) {
                     // we turned but five seconds are not over and the turning did not
@@ -462,7 +464,12 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
-    private String toJson(Collection<MinecraftObject> c) {
+    @Override
+    protected void playerLeft() {
+        // AFAIK, there is no cleanup we need to do.
+    }
+
+    private static String toJson(Collection<MinecraftObject> c) {
         return "["
                 + c.stream()
                 .map(MinecraftObject::asJson)
