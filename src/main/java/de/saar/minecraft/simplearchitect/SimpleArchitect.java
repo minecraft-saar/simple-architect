@@ -61,7 +61,7 @@ public class SimpleArchitect extends AbstractArchitect {
     }
 
     private static final Logger logger = LogManager.getLogger(SimpleArchitect.class);
-    private static final int RESEND_INTERVAL = 15000;
+    private static final int RESEND_INTERVAL = 12000;
     
     protected PlanCreator planCreator;
     
@@ -73,7 +73,7 @@ public class SimpleArchitect extends AbstractArchitect {
     protected AtomicInteger numBlocksPlaced = new AtomicInteger(0);
     protected AtomicLong lastUpdate = new AtomicLong(0);
     protected InstructionTuple currentInstruction;
-    protected Orientation lastOrientation = Orientation.ZPLUS;
+    protected Orientation lastOrientation = Orientation.ZMINUS;
     protected String scenario;
     private final CountDownLatch readyCounter = new CountDownLatch(1);
     private final CountDownLatch objectiveSet = new CountDownLatch(1);
@@ -336,7 +336,7 @@ public class SimpleArchitect extends AbstractArchitect {
         if (SecretWordThreadStarted || !config.getShowSecret()) {
             return;
         }
-        boolean timePassed = System.currentTimeMillis() - startTime >= config.getTimeoutMinutes()*60*1000; // 10 minutes
+        boolean timePassed = System.currentTimeMillis() - startTime >= config.getTimeoutMinutes()*60*1000;
         if (plan.isEmpty() || (numCorrectBlocks >= config.getTimeoutMinBlocks()  && timePassed)) {
             SecretWordThreadStarted = true;
             new Thread(() -> {
