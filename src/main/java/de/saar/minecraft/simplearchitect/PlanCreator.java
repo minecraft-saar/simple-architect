@@ -1,6 +1,5 @@
 package de.saar.minecraft.simplearchitect;
 
-import de.saar.coli.minecraft.MinecraftRealizer;
 import de.saar.coli.minecraft.relationextractor.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,8 +19,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class PlanCreator {
-    public static final CostFunction.InstructionLevel instructionlevel = CostFunction.InstructionLevel.valueOf(
-            System.getProperty("instructionlevel", "BLOCK"));
 
     private static final Logger logger = LogManager.getLogger(PlanCreator.class);
 
@@ -36,9 +33,11 @@ public class PlanCreator {
     }
 
     private Set<MinecraftObject> world;
-    private List<MinecraftObject> plan;
-    
-    public PlanCreator(String scenario) {
+    private final List<MinecraftObject> plan;
+    protected CostFunction.InstructionLevel instructionLevel;
+
+    public PlanCreator(String scenario, CostFunction.InstructionLevel instructionLevel) {
+        this.instructionLevel = instructionLevel;
         this.plan = computePlan(scenario);
     }
 
@@ -48,16 +47,23 @@ public class PlanCreator {
     public Set<MinecraftObject> getInitialWorld() {
         return new HashSet<>(world);
     }
-    
+
+    /**
+     * returns a copy of the current plan (so the consumer can freely edit the list).
+     */
     public List<MinecraftObject> getPlan() {
         return new ArrayList<>(plan);
     }
     
     public String getInstructionLevel() {
-        return instructionlevel.toString();
+        return instructionLevel.toString();
     }
-    
-    public Set<Block> getInitialBlocks() {
+
+    /**
+     * Extracts all blocks existing in the current world -- also extracts blocks from all high-level objects.
+     * @return a set of all blocks currently in the world.
+     */
+    public Set<Block> getBlocksCurrentWorld() {
         HashSet<Block> alreadyPlacedBlocks = new HashSet<>();
         world.forEach((x) ->
                 x.getBlocks().forEach((block) ->
@@ -66,9 +72,17 @@ public class PlanCreator {
         );
         return alreadyPlacedBlocks;
     }
-    
-    
-    private String createPlan(JSJshop planner, String scenario) {
+
+    /**
+     * Assembles all relevant resources and runs the {@code planner} on it.
+     * Currently it instead runs the planner for one iteration an then returns a precomputed plan
+     * to make the system real-time compatible.
+     * @param planner a Jshop planner
+     * @param scenario e.g. "house", "bridge"
+     * @param instructionLevel at what abstraction level the plan should be
+     * @return a plan represented as an s-expression String
+     */
+    private String computeJShopPlan(JSJshop planner, String scenario, CostFunction.InstructionLevel instructionLevel) {
         logger.debug("creating plan for " + scenario);
         int mctsruns = 1; //number of runs the planner tries to do
         int timeout = 10000; //time the planner runs in ms
@@ -76,15 +90,15 @@ public class PlanCreator {
         var initialworld = getResourceStream("/de/saar/minecraft/worlds/" + scenario + ".csv");
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
         String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
-        planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, instructionlevel);
-        String precomputedFileName = scenario + "-" + instructionlevel.name().toLowerCase() + ".plan";
+        planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, instructionLevel);
+        String precomputedFileName = scenario + "-" + instructionLevel.name().toLowerCase() + ".plan";
         return getResourceAsString("/de/saar/minecraft/domains/" + precomputedFileName);
     }
 
     public List<MinecraftObject> computePlan(String scenario) {
         logger.debug("computing plan");
         JSJshop planner = new JSJshop();
-        var jshopPlan = createPlan(planner, scenario);
+        var jshopPlan = computeJShopPlan(planner, scenario, this.instructionLevel);
 
         world = transformState(planner.prob.state());
         // note which blocks already exist in the world.
@@ -222,41 +236,41 @@ public class PlanCreator {
                     result.add(createRow(taskArray));
                     break;
                 case "(!build-row-starting":
-                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createRow(taskArray), true, "row"));
                     break;
                 case "(!build-row-finished":
-                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createRow(taskArray), false, "row"));
                     break;
                 case "(!build-wall-starting":
-                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createWall(taskArray), true, "wall"));
                     break;
                 case "(!build-wall-finished":
-                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createWall(taskArray), false, "wall"));
                     break;
                 case "(!build-wall":
                     result.add(createWall(taskArray));
                     break;
                 case "(!build-railing-starting":
-                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createRailing(taskArray), true, "railing"));
                     break;
                 case "(!build-railing-finished":
-                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createRailing(taskArray), false, "railing"));
                     break;
                 case "(!build-railing":
                     result.add(createRailing(taskArray));
                     break;
                 case "(!build-floor-starting":
-                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createFloor(taskArray), true, "floor"));
                     break;
                 case "(!build-floor-finished":
-                    if (instructionlevel != CostFunction.InstructionLevel.BLOCK)
+                    if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
                         result.add(new IntroductionMessage(createFloor(taskArray), false, "floor"));
                     break;
                 case "(!build-floor":

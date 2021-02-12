@@ -1,0 +1,8 @@
+port: 10000
+secretWord: Foobar
+timeoutMinutes: 10
+timeoutMinBlocks: 4
+# randomizeWeights: true
+useTrainedWeights: true
+weightTrainingDatabase: "jdbc:mariadb://localhost:3306/MINECRAFTTEST"
+instructionlevel: adaptive

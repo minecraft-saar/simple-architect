@@ -4,6 +4,7 @@ import de.saar.coli.minecraft.MinecraftRealizer;
 import de.saar.coli.minecraft.relationextractor.Block;
 import de.saar.coli.minecraft.relationextractor.MinecraftObject;
 import de.saar.coli.minecraft.relationextractor.Relation.Orientation;
+import de.saar.minecraft.analysis.WeightEstimator;
 import de.saar.minecraft.architect.AbstractArchitect;
 import de.saar.minecraft.shared.BlockDestroyedMessage;
 import de.saar.minecraft.shared.BlockPlacedMessage;
@@ -13,6 +14,7 @@ import de.saar.minecraft.shared.WorldSelectMessage;
 import de.up.ling.tree.Tree;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import umd.cs.shop.costs.CostFunction;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -62,7 +64,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
     private static final Logger logger = LogManager.getLogger(SimpleArchitect.class);
     private static final int RESEND_INTERVAL = 12000;
-    
+
     protected PlanCreator planCreator;
     
     protected Set<MinecraftObject> it = Set.of();
@@ -94,6 +96,15 @@ public class SimpleArchitect extends AbstractArchitect {
         this.realizer = MinecraftRealizer.createRealizer();
         if (config.getRandomizeWeights()) {
             this.realizer.randomizeExpectedDurations();
+        }
+        if (config.getUseTrainedWeights()) {
+            var estimator = new WeightEstimator(config.getWeightTrainingDatabase(),
+                    config.getWeightTrainingDBUser(),
+                    config.getWeightTrainingDBPassword(),
+                    config.getTrainingSamplingLowerPercentile(),
+                    config.getTrainingSamplingUpperPercentile());
+            var weights = estimator.sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns());
+            realizer.setExpectedDurations(weights, false);
         }
     }
 
@@ -139,24 +150,63 @@ public class SimpleArchitect extends AbstractArchitect {
                 .collect(Collectors.joining("\n"));
     }
 
+    /**
+     * computes the plan and initializes the world.
+     */
     @Override
     public synchronized void initialize(WorldSelectMessage message) {
         logger.debug(() -> "initializing with " + message);
         setGameId(message.getGameId());
         scenario = message.getName();
-        planCreator = new PlanCreator(scenario);
+        String instructionlevel = config.getInstructionlevel();
+        if (instructionlevel.equals("adaptive")) {
+            planCreator = getOptimalPlan(scenario);
+        } else {
+            planCreator = new PlanCreator(scenario, CostFunction.InstructionLevel.valueOf(instructionlevel));
+        }
         this.plan = planCreator.getPlan();
         this.world = planCreator.getInitialWorld();
-        this.alreadyPlacedBlocks = planCreator.getInitialBlocks();
+        this.alreadyPlacedBlocks = planCreator.getBlocksCurrentWorld();
         logger.debug("initialization done");
         readyCounter.countDown();
     }
 
-    /**
-     * computes the plan and initializes the world.
-     */
-
-
+    protected PlanCreator getOptimalPlan(String scenario) {
+        PlanCreator argmin = null;
+        double min = Double.POSITIVE_INFINITY;
+        for (var il : CostFunction.InstructionLevel.values()) {
+            logger.warn("trying instruction level " +  il);
+            var planCreator = new PlanCreator(scenario, il);
+            double cost = getCostForPlanCreator(planCreator);
+            logger.warn("cost: " + cost);
+            if (cost < min) {
+                argmin = planCreator;
+            }
+        }
+        return argmin;
+    }
+    
+    protected double getCostForPlanCreator(PlanCreator planCreator) {
+        var tmpplan = planCreator.getPlan();
+        var tmpworld = planCreator.getInitialWorld();;
+        double totalCost = 0;
+        Set<MinecraftObject> it = new HashSet<>();
+        for (var mco: tmpplan) {
+            if (mco instanceof IntroductionMessage) {
+                continue;
+            }
+            var tree = realizer.generateReferringExpressionTree(tmpworld, mco, it, Orientation.ZMINUS);
+            totalCost += realizer.getWeightForTree(tree);
+            tmpworld.add(mco);
+            tmpworld.addAll(mco.getBlocks());
+            it.clear();
+            it.add(mco);
+            // TODO: In a real world we would also have the last block as "it", but we don't know which it
+            // is. Add a random block from getBlocks?
+        }
+        return totalCost;
+    }
+    
     @Override
     public synchronized void handleBlockPlaced(BlockPlacedMessage request) {
         // only perform one computation at a time.
@@ -297,6 +347,7 @@ public class SimpleArchitect extends AbstractArchitect {
         log(toJson(world),
                 "CurrentWorld");
         log(toInstruct.asJson(), "CurrentObject");
+        log(toJson(it), "it");
         currentInstructionBlocksLeft = toInstruct.getBlocks();
         // All blocks that were incorrectly placed before
         // and are part ot the thing we want to instruct are now not
@@ -479,6 +530,6 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public String getArchitectInformation() {
-        return "SimpleArchitect-" + PlanCreator.instructionlevel;
+        return "SimpleArchitect-" + config.getInstructionlevel();
     }
 }
