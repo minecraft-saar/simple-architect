@@ -3,4 +3,4 @@ secretWord: Foobar
 timeoutMinutes: 10
 timeoutMinBlocks: 4
 instructionlevel: BLOCK
-randomizeWeights: true
+weightSource: random

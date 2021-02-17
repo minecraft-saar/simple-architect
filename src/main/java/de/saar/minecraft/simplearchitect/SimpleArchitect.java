@@ -16,9 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import umd.cs.shop.costs.CostFunction;
 
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -94,17 +92,32 @@ public class SimpleArchitect extends AbstractArchitect {
     public SimpleArchitect(SimpleArchitectConfiguration config) {
         this.config = config;
         this.realizer = MinecraftRealizer.createRealizer();
-        if (config.getRandomizeWeights()) {
-            this.realizer.randomizeExpectedDurations();
-        }
-        if (config.getUseTrainedWeights()) {
-            var estimator = new WeightEstimator(config.getWeightTrainingDatabase(),
-                    config.getWeightTrainingDBUser(),
-                    config.getWeightTrainingDBPassword(),
-                    config.getTrainingSamplingLowerPercentile(),
-                    config.getTrainingSamplingUpperPercentile());
-            var weights = estimator.sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns());
-            realizer.setExpectedDurations(weights, false);
+        switch (config.getWeightSource()) {
+            case "random":
+                this.realizer.randomizeExpectedDurations();
+                break;
+            case "bootstrapped":
+                var estimator = new WeightEstimator(config.getWeightTrainingDatabase(),
+                        config.getWeightTrainingDBUser(),
+                        config.getWeightTrainingDBPassword(),
+                        config.getTrainingSamplingLowerPercentile(),
+                        config.getTrainingSamplingUpperPercentile());
+                var weights = estimator.sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns());
+                realizer.setExpectedDurations(weights, false);
+                break;
+            case "optimal":
+                var est = new WeightEstimator(config.getWeightTrainingDatabase(),
+                        config.getWeightTrainingDBUser(),
+                        config.getWeightTrainingDBPassword(),
+                        config.getTrainingSamplingLowerPercentile(),
+                        config.getTrainingSamplingUpperPercentile());
+                realizer.setExpectedDurations(est.predictDurationCoeffsFromAllGames(), false);
+                break;
+            case "default":
+                break;
+            default:
+                throw new RuntimeException("unknown value \"" + config.getWeightSource() + "\" for weightSource. "
+                + "valid values: random, bootstrapped, optimal, default");
         }
     }
 
@@ -142,12 +155,6 @@ public class SimpleArchitect extends AbstractArchitect {
 
     private static InputStream getResourceStream(String resName) {
         return SimpleArchitect.class.getResourceAsStream(resName);
-    }
-
-    private static String getResourceAsString(String resName) {
-        return new BufferedReader(new InputStreamReader(getResourceStream(resName)))
-                .lines()
-                .collect(Collectors.joining("\n"));
     }
 
     /**
@@ -188,7 +195,7 @@ public class SimpleArchitect extends AbstractArchitect {
     
     protected double getCostForPlanCreator(PlanCreator planCreator) {
         var tmpplan = planCreator.getPlan();
-        var tmpworld = planCreator.getInitialWorld();;
+        var tmpworld = planCreator.getInitialWorld();
         double totalCost = 0;
         Set<MinecraftObject> it = new HashSet<>();
         for (var mco: tmpplan) {

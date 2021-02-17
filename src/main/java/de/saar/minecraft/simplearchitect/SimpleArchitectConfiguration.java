@@ -12,8 +12,7 @@ public class SimpleArchitectConfiguration {
     private int timeoutMinBlocks = 5;
     private int timeoutMinutes = 10;
     private boolean showSecret = true;
-    private boolean randomizeWeights = false;
-    private boolean useTrainedWeights = false;
+    private String weightSource = "default";
     private String weightTrainingDatabase = "jdbc:mariadb://localhost:3306/MINECRAFT";
     private String weightTrainingDBUser = "minecraft";
     private String weightTrainingDBPassword = "";
@@ -61,22 +60,6 @@ public class SimpleArchitectConfiguration {
         this.showSecret = showSecret;
     }
 
-    public boolean getRandomizeWeights() {
-        return randomizeWeights;
-    }
-
-    public void setRandomizeWeights(boolean randomizeWeights) {
-        this.randomizeWeights = randomizeWeights;
-    }
-
-    public boolean getUseTrainedWeights() {
-        return useTrainedWeights;
-    }
-
-    public void setUseTrainedWeights(boolean useTrainedWeights) {
-        this.useTrainedWeights = useTrainedWeights;
-    }
-
     public String getWeightTrainingDatabase() {
         return weightTrainingDatabase;
     }
@@ -109,6 +92,15 @@ public class SimpleArchitectConfiguration {
         this.trainingNumBootstrapRuns = trainingNumBootstrapRuns;
     }
 
+    public String getWeightSource() {
+        return weightSource;
+    }
+
+    public void setWeightSource(String weightSource) {
+        this.weightSource = weightSource;
+    }
+
+
 
 
     @Override
@@ -118,7 +110,7 @@ public class SimpleArchitectConfiguration {
                 ", timoutMinBlocks=" + timeoutMinBlocks +
                 ", timeoutMinutes=" + timeoutMinutes +
                 ", showSecret=" + showSecret +
-                ", randomizeWeights=" + randomizeWeights +
+                ", weightSource=" + weightSource +
                 '}';
     }
 

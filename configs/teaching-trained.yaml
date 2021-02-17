@@ -4,4 +4,4 @@ timeoutMinutes: 10
 timeoutMinBlocks: 4
 instructionlevel: MEDIUM
 weightTrainingDatabase: "jdbc:mariadb://localhost:3306/MINECRAFTTEST"
-useTrainedWeights: true
+weightSource: bootstrapped
