@@ -17,11 +17,7 @@ import org.apache.logging.log4j.Logger;
 import umd.cs.shop.costs.CostFunction;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -80,6 +76,7 @@ public class SimpleArchitect extends AbstractArchitect {
     private long startTime;
     private boolean SecretWordThreadStarted = false;
     private int numCorrectBlocks = 0;
+    protected WeightEstimator.WeightResult weights;
 
     private final SimpleArchitectConfiguration config;
 
@@ -97,21 +94,24 @@ public class SimpleArchitect extends AbstractArchitect {
                 this.realizer.randomizeExpectedDurations();
                 break;
             case "bootstrapped":
-                var estimator = new WeightEstimator(config.getWeightTrainingDatabase(),
+                weights = new WeightEstimator(config.getWeightTrainingDatabase(),
                         config.getWeightTrainingDBUser(),
                         config.getWeightTrainingDBPassword(),
                         config.getTrainingSamplingLowerPercentile(),
-                        config.getTrainingSamplingUpperPercentile());
-                var weights = estimator.sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns());
-                realizer.setExpectedDurations(weights, false);
+                        config.getTrainingSamplingUpperPercentile(),
+                        this.generateSeedInstructionTrees())
+                        .sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns(), false);
+                realizer.setExpectedDurations(weights.weights, false);
                 break;
             case "optimal":
-                var est = new WeightEstimator(config.getWeightTrainingDatabase(),
+                weights = new WeightEstimator(config.getWeightTrainingDatabase(),
                         config.getWeightTrainingDBUser(),
                         config.getWeightTrainingDBPassword(),
                         config.getTrainingSamplingLowerPercentile(),
-                        config.getTrainingSamplingUpperPercentile());
-                realizer.setExpectedDurations(est.predictDurationCoeffsFromAllGames(), false);
+                        config.getTrainingSamplingUpperPercentile(),
+                        new ArrayList<>())
+                    .predictDurationCoeffsFromAllGames();
+                realizer.setExpectedDurations(weights.weights, false);
                 break;
             case "default":
                 break;
@@ -188,28 +188,103 @@ public class SimpleArchitect extends AbstractArchitect {
             logger.warn("cost: " + cost);
             if (cost < min) {
                 argmin = planCreator;
+                min = cost;
             }
         }
         return argmin;
     }
+
+    protected List<List<Tree<String>>> generateSeedInstructionTrees() {
+        List<List<Tree<String>>> result = new ArrayList<>();
+        for (String currScenario: List.of("house")) {
+            for (var il : CostFunction.InstructionLevel.values()) {
+                logger.debug("trying instruction level " + il);
+                var planCreator = new PlanCreator(currScenario, il);
+                result.add(generateSeedInstructionTrees(planCreator));
+            }
+        }
+        return result;
+    }
     
+    protected List<Tree<String>> generateSeedInstructionTrees(PlanCreator planCreator) {
+        var result = new ArrayList<Tree<String>>();
+        var tmpplan = planCreator.getPlan();
+        var tmpworld = planCreator.getInitialWorld();
+
+        Set<MinecraftObject> it = new HashSet<>();
+        Set<String> knownOjbectTypes = new HashSet<>();
+        for (var mco: tmpplan) {
+            if (mco instanceof IntroductionMessage) {
+                knownOjbectTypes.add(((IntroductionMessage) mco).object.getClass().getSimpleName().toLowerCase());
+                continue;
+            }
+            String currentObjectType = mco.getClass().getSimpleName().toLowerCase();
+            boolean objectFirstOccurence = ! knownOjbectTypes.contains(currentObjectType);
+            var tree = realizer.generateReferringExpressionTree(tmpworld, mco, it, Orientation.ZMINUS);
+            if (tree != null) {
+                result.add(tree);
+            } else {
+                logger.warn("tree is null for object " + mco.toString());
+            }
+
+            tmpworld.add(mco);
+            tmpworld.addAll(mco.getBlocks());
+            it.clear();
+            it.add(mco);
+            if (objectFirstOccurence) {
+                knownOjbectTypes.add(currentObjectType);
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * Returns the predicted cost (in seconds) to fulfill the plan created by {@code planCreator}.
+     * The cost is the negative weight of all derivation trees for the plans;
+     * introduction messages are ignored.
+     */
     protected double getCostForPlanCreator(PlanCreator planCreator) {
         var tmpplan = planCreator.getPlan();
         var tmpworld = planCreator.getInitialWorld();
         double totalCost = 0;
         Set<MinecraftObject> it = new HashSet<>();
+        Set<String> knownOjbectTypes = new HashSet<>();
         for (var mco: tmpplan) {
             if (mco instanceof IntroductionMessage) {
+                knownOjbectTypes.add(((IntroductionMessage) mco).object.getClass().getSimpleName().toLowerCase());
                 continue;
             }
+            String currentObjectType = mco.getClass().getSimpleName().toLowerCase();
+            System.out.println("CURRENT OBJECT " + currentObjectType);
+            boolean objectFirstOccurence = ! knownOjbectTypes.contains(currentObjectType);
+            if (objectFirstOccurence) {
+                // temporarily set the weight to the first occurence one
+                // ... if we have an estimate for the first occurence
+                if (weights.firstOccurenceWeights.containsKey("i" + currentObjectType)) {
+                    realizer.setExpectedDurations(
+                            Map.of(currentObjectType, weights.firstOccurenceWeights.get("i" + currentObjectType)),
+                            false);
+                }
+            }
             var tree = realizer.generateReferringExpressionTree(tmpworld, mco, it, Orientation.ZMINUS);
-            totalCost += realizer.getWeightForTree(tree);
+            totalCost -= realizer.getWeightForTree(tree);
             tmpworld.add(mco);
             tmpworld.addAll(mco.getBlocks());
             it.clear();
             it.add(mco);
-            // TODO: In a real world we would also have the last block as "it", but we don't know which it
-            // is. Add a random block from getBlocks?
+            if (objectFirstOccurence) {
+                knownOjbectTypes.add(currentObjectType);
+                // reset weights
+                if (weights.firstOccurenceWeights.containsKey("i" + currentObjectType)) {
+                    realizer.setExpectedDurations(
+                            Map.of(currentObjectType, weights.weights.get("i" + currentObjectType)),
+                            false);
+                }
+            }
+
+            /* TODO: In a real world we would also have the last block as "it", but we don't know which it is.
+               Add a random block from getBlocks?
+             */
         }
         return totalCost;
     }
