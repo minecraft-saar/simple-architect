@@ -3,6 +3,7 @@ package de.saar.minecraft.simplearchitect;
 import de.saar.coli.minecraft.MinecraftRealizer;
 import de.saar.coli.minecraft.relationextractor.Block;
 import de.saar.coli.minecraft.relationextractor.MinecraftObject;
+import de.saar.coli.minecraft.relationextractor.IntroductionMessage;
 import de.saar.coli.minecraft.relationextractor.Relation.Orientation;
 import de.saar.minecraft.analysis.WeightEstimator;
 import de.saar.minecraft.architect.AbstractArchitect;
