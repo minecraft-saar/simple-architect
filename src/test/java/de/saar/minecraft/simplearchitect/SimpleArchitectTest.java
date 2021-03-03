@@ -1,5 +1,6 @@
 package de.saar.minecraft.simplearchitect;
 
+import de.saar.coli.minecraft.relationextractor.IntroductionMessage;
 import de.saar.coli.minecraft.relationextractor.MinecraftObject;
 import de.saar.coli.minecraft.relationextractor.Relation;
 import de.saar.minecraft.shared.WorldSelectMessage;
