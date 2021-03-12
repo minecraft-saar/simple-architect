@@ -100,7 +100,8 @@ public class SimpleArchitect extends AbstractArchitect {
                         config.getWeightTrainingDBPassword(),
                         config.getTrainingSamplingLowerPercentile(),
                         config.getTrainingSamplingUpperPercentile(),
-                        this.generateSeedInstructionTrees())
+                        this.generateSeedInstructionTrees(),
+                        this.getArchitectInformation())
                         .sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns(), false);
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
@@ -110,7 +111,8 @@ public class SimpleArchitect extends AbstractArchitect {
                         config.getWeightTrainingDBPassword(),
                         config.getTrainingSamplingLowerPercentile(),
                         config.getTrainingSamplingUpperPercentile(),
-                        new ArrayList<>())
+                        this.generateSeedInstructionTrees(),
+                        this.getArchitectInformation())
                     .predictDurationCoeffsFromAllGames();
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
@@ -245,6 +247,7 @@ public class SimpleArchitect extends AbstractArchitect {
      * introduction messages are ignored.
      */
     protected double getCostForPlanCreator(PlanCreator planCreator) {
+        logger.debug("computing cost for " + planCreator.getInstructionLevel());
         var tmpplan = planCreator.getPlan();
         var tmpworld = planCreator.getInitialWorld();
         double totalCost = 0;
@@ -252,11 +255,15 @@ public class SimpleArchitect extends AbstractArchitect {
         Set<String> knownOjbectTypes = new HashSet<>();
         for (var mco: tmpplan) {
             if (mco instanceof IntroductionMessage) {
-                knownOjbectTypes.add(((IntroductionMessage) mco).object.getClass().getSimpleName().toLowerCase());
+                var im = (IntroductionMessage)mco;
+                if (! im.starting) {
+                    world.add(im.object);
+                    knownOjbectTypes.add(im.object.getClass().getSimpleName().toLowerCase());
+                }
                 continue;
             }
             String currentObjectType = mco.getClass().getSimpleName().toLowerCase();
-            System.out.println("CURRENT OBJECT " + currentObjectType);
+            logger.debug("current object " + currentObjectType);
             boolean objectFirstOccurence = ! knownOjbectTypes.contains(currentObjectType);
             if (objectFirstOccurence) {
                 // temporarily set the weight to the first occurence one
