@@ -218,7 +218,12 @@ public class SimpleArchitect extends AbstractArchitect {
         Set<String> knownOjbectTypes = new HashSet<>();
         for (var mco: tmpplan) {
             if (mco instanceof IntroductionMessage) {
-                knownOjbectTypes.add(((IntroductionMessage) mco).object.getClass().getSimpleName().toLowerCase());
+                var im = (IntroductionMessage) mco;
+                if (! im.starting) {
+                    tmpworld.add(im.object);
+                    it.add(im.object);
+                    knownOjbectTypes.add(((IntroductionMessage) mco).object.getClass().getSimpleName().toLowerCase());
+                }
                 continue;
             }
             String currentObjectType = mco.getClass().getSimpleName().toLowerCase();
@@ -228,6 +233,8 @@ public class SimpleArchitect extends AbstractArchitect {
                 result.add(tree);
             } else {
                 logger.warn("tree is null for object " + mco.toString());
+                logger.warn("world: " + toJson(tmpworld));
+                logger.warn("it: " + toJson(it));
             }
 
             tmpworld.add(mco);
@@ -257,7 +264,8 @@ public class SimpleArchitect extends AbstractArchitect {
             if (mco instanceof IntroductionMessage) {
                 var im = (IntroductionMessage)mco;
                 if (! im.starting) {
-                    world.add(im.object);
+                    tmpworld.add(im.object);
+                    it.add(im.object);
                     knownOjbectTypes.add(im.object.getClass().getSimpleName().toLowerCase());
                 }
                 continue;
@@ -274,7 +282,13 @@ public class SimpleArchitect extends AbstractArchitect {
                             false);
                 }
             }
-            var tree = realizer.generateReferringExpressionTree(tmpworld, mco, it, Orientation.ZMINUS);
+            var tree = realizer.generateReferringExpressionTree(tmpworld, mco, it, Orientation.XMINUS);
+            if (tree == null) {
+                logger.warn("tree is null in the following context: ");
+                logger.warn("current target: " + mco);
+                logger.warn("current world: " + toJson(world));
+                logger.warn("it: " + toJson(it));
+            }
             totalCost -= realizer.getWeightForTree(tree);
             tmpworld.add(mco);
             tmpworld.addAll(mco.getBlocks());
