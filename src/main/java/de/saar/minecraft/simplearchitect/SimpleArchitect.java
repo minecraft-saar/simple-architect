@@ -286,7 +286,7 @@ public class SimpleArchitect extends AbstractArchitect {
             if (tree == null) {
                 logger.warn("tree is null in the following context: ");
                 logger.warn("current target: " + mco);
-                logger.warn("current world: " + toJson(world));
+                logger.warn("current world: " + toJson(tmpworld));
                 logger.warn("it: " + toJson(it));
             }
             totalCost -= realizer.getWeightForTree(tree);
