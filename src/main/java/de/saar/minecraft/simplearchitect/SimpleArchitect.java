@@ -634,6 +634,6 @@ public class SimpleArchitect extends AbstractArchitect {
 
     @Override
     public String getArchitectInformation() {
-        return "SimpleArchitect-" + config.getInstructionlevel();
+        return config.getName();
     }
 }

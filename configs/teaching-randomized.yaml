@@ -1,3 +1,4 @@
+name: teaching-randomweights
 port: 10000
 secretWord: Foobar
 timeoutMinutes: 10

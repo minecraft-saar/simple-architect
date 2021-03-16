@@ -1,3 +1,4 @@
+name: block-randomweights
 port: 10000
 secretWord: Foobar
 timeoutMinutes: 10

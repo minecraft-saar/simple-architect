@@ -1,1 +1,3 @@
 rootProject.name = 'simple-architect'
+includeBuild "../weight-estimator"
+includeBuild "../minecraft-nlg"

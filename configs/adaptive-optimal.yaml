@@ -1,7 +1,9 @@
+name: adaptive-optimal
 port: 10000
 secretWord: Foobar
 timeoutMinutes: 10
 timeoutMinBlocks: 4
-instructionlevel: BLOCK
+instructionlevel: adaptive
 weightTrainingDatabase: "jdbc:mariadb://localhost:3306/MINECRAFTTEST"
 weightSource: bootstrapped
+trainingNumBootstrapRuns: 100

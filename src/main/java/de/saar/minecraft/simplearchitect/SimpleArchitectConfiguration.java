@@ -7,6 +7,7 @@ import java.io.Reader;
 
 public class SimpleArchitectConfiguration {
 
+    private String name = "";
     private int port = 10000;
     private String secretWord = "secretWord";
     private int timeoutMinBlocks = 5;
@@ -100,6 +101,16 @@ public class SimpleArchitectConfiguration {
         this.weightSource = weightSource;
     }
 
+    public String getName() {
+        if (name.equals("")) {
+            return "SimpleArchitect-" + instructionlevel;
+        }
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
 
 

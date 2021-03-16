@@ -1,3 +1,4 @@
+name: teaching-uniformweights
 port: 10000
 secretWord: Foobar
 timeoutMinutes: 10
