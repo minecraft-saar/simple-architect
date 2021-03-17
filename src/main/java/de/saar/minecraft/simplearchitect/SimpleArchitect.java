@@ -273,7 +273,7 @@ public class SimpleArchitect extends AbstractArchitect {
             String currentObjectType = mco.getClass().getSimpleName().toLowerCase();
             logger.debug("current object " + currentObjectType);
             boolean objectFirstOccurence = ! knownOjbectTypes.contains(currentObjectType);
-            if (objectFirstOccurence && this.weights != null) {
+            if (objectFirstOccurence && weights != null) {
                 // temporarily set the weight to the first occurence one
                 // ... if we have an estimate for the first occurence
                 if (weights.firstOccurenceWeights.containsKey("i" + currentObjectType)) {
@@ -297,7 +297,7 @@ public class SimpleArchitect extends AbstractArchitect {
             if (objectFirstOccurence) {
                 knownOjbectTypes.add(currentObjectType);
                 // reset weights
-                if (this.weights != null && weights.firstOccurenceWeights.containsKey("i" + currentObjectType)) {
+                if (weights != null && weights.weights.containsKey("i" + currentObjectType)) {
                     realizer.setExpectedDurations(
                             Map.of(currentObjectType, weights.weights.get("i" + currentObjectType)),
                             false);
