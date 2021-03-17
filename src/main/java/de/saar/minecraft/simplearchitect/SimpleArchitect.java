@@ -472,6 +472,21 @@ public class SimpleArchitect extends AbstractArchitect {
         }
         var t = System.currentTimeMillis();
         var currentTree = realizer.generateReferringExpressionTree(world, toInstruct, it, lastOrientation);
+
+        if (currentTree == null) {
+            // We somehow fail.
+            // log the problem and hide from the user.
+            logger.warn("Failed to build instruction");
+            log("{\"world\":" + toJson(world)
+                            + ", \"target\": " + plan.get(0).asJson()
+                            + ", \"it\": " + toJson(it)
+                            + ", \"orientation\": \"" + lastOrientation + "\""
+                    , "NLGFailure");
+            var result = new ArrayList<InstructionTuple>();
+            result.add(new InstructionTuple("I could not create an instruction for you, please do what you think is right", null, true));
+            return result;
+        }
+
         log(String.valueOf(System.currentTimeMillis() - t), "RealizerTiming");
         currentInstruction = new InstructionTuple(
                 toInstruct.getVerb() + " " + realizer.treeToReferringExpression(currentTree),
@@ -527,6 +542,11 @@ public class SimpleArchitect extends AbstractArchitect {
             alreadyPlacedBlocks.remove(block);
             return;
         }
+        if (plan.contains(block)) {
+            // we already have this block in our plan, no need to add it.
+            return;
+        }
+        
         // If a block that should be placed is removed again, re-add it to the plan
         // and instruct the user to place this block again
         if (alreadyPlacedBlocks.contains(block)) {
