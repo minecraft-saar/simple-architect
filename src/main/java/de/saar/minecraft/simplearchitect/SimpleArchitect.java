@@ -339,14 +339,11 @@ public class SimpleArchitect extends AbstractArchitect {
                 world.add(plan.get(0));
                 alreadyPlacedBlocks.add(blockPlaced);
                 // we can refer to the HLO and the block as it.
-                if (!blockPlaced.equals(plan.get(0))) {
-                    it = Set.of(blockPlaced, plan.get(0));
-                } else {
-                    // Set.of cannot deal with multiple elements being the same,
-                    // therefore we check this in this if/else clause.
-                    // Both are the same if we instructed to build a single block.
-                    it = Set.of(blockPlaced);
-                }
+                // remove all blocks because we add a new block
+                // remove all objects of the type we just finished because we add that one.
+                it.removeIf((elem) -> elem instanceof Block || elem.getClass().equals(plan.get(0).getClass()));
+                it.add(blockPlaced);
+                it.add(plan.get(0));
                 plan.remove(0);
                 updateInstructions();
                 if (plan.isEmpty()) {
@@ -438,9 +435,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 return result;
             } else {
                 world.add(obj.object);
-                var newit = new HashSet<>(it);
-                newit.add(obj.object);
-                it = newit;
+                it.removeIf((elem) -> obj.object.getClass().equals(elem.getClass()));
                 var result = new ArrayList<InstructionTuple>();
                 result.add(new InstructionTuple("Great! You finished building a " + obj.name, null, true));
                 result.addAll(computeNextInstructions());
@@ -483,7 +478,8 @@ public class SimpleArchitect extends AbstractArchitect {
                             + ", \"orientation\": \"" + lastOrientation + "\""
                     , "NLGFailure");
             var result = new ArrayList<InstructionTuple>();
-            result.add(new InstructionTuple("I could not create an instruction for you, please do what you think is right", null, true));
+            currentInstruction = new InstructionTuple("I could not create an instruction for you, please do what you think is right", null, true);
+            result.add(currentInstruction);
             return result;
         }
 
@@ -538,7 +534,7 @@ public class SimpleArchitect extends AbstractArchitect {
         // We instructed the user to remove the block,
         // so simply remove it from our list.
         if (incorrectlyPlacedBlocks.contains(block)) {
-            it = Set.of();
+            it.removeIf((elem) -> elem instanceof Block);
             alreadyPlacedBlocks.remove(block);
             return;
         }
@@ -550,7 +546,8 @@ public class SimpleArchitect extends AbstractArchitect {
         // If a block that should be placed is removed again, re-add it to the plan
         // and instruct the user to place this block again
         if (alreadyPlacedBlocks.contains(block)) {
-            it = Set.of(); // We cannot say "previous block" when the last action was a removal
+            // We cannot say "previous block" when the last action was a removal
+            it.removeIf((elem) -> elem instanceof Block);
             alreadyPlacedBlocks.remove(block);
             plan.add(0, block);
             var newInstructions = computeNextInstructions();
