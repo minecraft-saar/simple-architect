@@ -62,7 +62,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
     protected PlanCreator planCreator;
     
-    protected Set<MinecraftObject> it = Set.of();
+    protected HashSet<MinecraftObject> it = new HashSet<>();
     private List<MinecraftObject> plan;
     private Set<Block> currentInstructionBlocksLeft = Set.of();
     protected Set<MinecraftObject> world;
@@ -261,7 +261,7 @@ public class SimpleArchitect extends AbstractArchitect {
         var tmpplan = planCreator.getPlan();
         var tmpworld = planCreator.getInitialWorld();
         double totalCost = 0;
-        Set<MinecraftObject> it = new HashSet<>();
+        HashSet<MinecraftObject> it = new HashSet<>();
         Set<String> knownOjbectTypes = new HashSet<>();
         for (var mco: tmpplan) {
             if (mco instanceof IntroductionMessage) {
