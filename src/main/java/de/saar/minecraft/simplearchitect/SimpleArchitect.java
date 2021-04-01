@@ -102,7 +102,7 @@ public class SimpleArchitect extends AbstractArchitect {
                         config.getTrainingSamplingUpperPercentile(),
                         this.generateSeedInstructionTrees(),
                         this.getArchitectInformation())
-                        .sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns(), false);
+                        .sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns(), true);
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
             case "optimal":
@@ -148,8 +148,7 @@ public class SimpleArchitect extends AbstractArchitect {
         String planString = "[" + plan.stream()
                 .map(MinecraftObject::asJson)
                 .collect(Collectors.joining(",\n")) + "]";
-        var weights = this.realizer.getWeightsAsJson();
-        log(weights, "GrammarWeights");
+        log(weights.toJson(), "GrammarWeights");
         log(planString, "InitialPlan");
         var instructions = computeNextInstructions();
         sendMessages(instructions, false);

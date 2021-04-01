@@ -42,12 +42,12 @@ dependencies {
     implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.1'
     implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.1'
     implementation "org.yaml:snakeyaml:1.25"
-    compile group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: 'd4b637682f266a04c2096e974d23a8b5ffb9678f'
+    compile group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: 'cc834f0b445accd6ef81bea5c409cad8ce22f94b'
     compile group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.2.1"
     compile group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.1"
     compile 'de.saar.minecraft:jshop:1.2.2'
     runtimeOnly 'de.saar.minecraft:shared-resources:1.1.17'
-    compile group: 'com.github.minecraft-saar', name: 'weight-estimator', version: 'b685a830315a6208fdc3c23725eccf3015c49aad'
+    compile group: 'com.github.minecraft-saar', name: 'weight-estimator', version: 'b09b1057772b9e9772a270a3eddbe6d281f13d07'
 }
 
 mainClassName = 'de.saar.minecraft.simplearchitect.Main'
