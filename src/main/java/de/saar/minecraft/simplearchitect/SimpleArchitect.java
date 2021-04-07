@@ -372,6 +372,11 @@ public class SimpleArchitect extends AbstractArchitect {
                 incorrectlyPlacedBlocks.add(blockPlaced);
                 alreadyPlacedBlocks.add(blockPlaced);
                 sendMessage("Not there! please remove that block again and " + currentInstruction.instruction);
+                it.removeIf((elem) -> elem instanceof Block);
+                it.add(blockPlaced);
+                // recompute instruction with current block as "it"
+                currentInstruction = computeNextInstructions().get(0);
+                currentInstruction.isNewInstruction = false;
             }
             numBlocksPlaced.incrementAndGet();
         }
@@ -474,12 +479,7 @@ public class SimpleArchitect extends AbstractArchitect {
         if (currentTree == null) {
             // We somehow fail.
             // log the problem and hide from the user.
-            logger.warn("Failed to build instruction");
-            log("{\"world\":" + toJson(world)
-                            + ", \"target\": " + plan.get(0).asJson()
-                            + ", \"it\": " + toJson(it)
-                            + ", \"orientation\": \"" + lastOrientation + "\""
-                    , "NLGFailure");
+            logInstructionGenerationFailure();
             var result = new ArrayList<InstructionTuple>();
             currentInstruction = new InstructionTuple("I could not create an instruction for you, please do what you think is right", null, true);
             result.add(currentInstruction);
@@ -539,6 +539,25 @@ public class SimpleArchitect extends AbstractArchitect {
         if (incorrectlyPlacedBlocks.contains(block)) {
             it.removeIf((elem) -> elem instanceof Block);
             alreadyPlacedBlocks.remove(block);
+            // We are in this situation: We gave an instruction to the user,
+            // the user placed a block incorrectly, now corrected that error.
+            // Therefore, computing the next instructions should give us exactly
+            // one instruction, namely the one we tried before misplacing the block.
+            var newInstructions = computeNextInstructions();
+            if (newInstructions.isEmpty()) {
+                logInstructionGenerationFailure();
+                // no clue what else to do here.
+                return;
+            }
+            if (newInstructions.size() > 1) {
+                log("got " + newInstructions.size() + " instructions", "handleBlocksDestroyed");
+                logInstructionGenerationFailure();
+                return;
+            }
+            var instruction = newInstructions.get(0);
+            // we newly generate it, but it is still the same objective as before.
+            instruction.isNewInstruction = false;
+            sendMessages(List.of(instruction));
             return;
         }
         if (plan.contains(block)) {
@@ -625,18 +644,25 @@ public class SimpleArchitect extends AbstractArchitect {
                 } else {
                     // We still want to say the same thing but somehow fail.
                     // log the problem and hide from the user.
-                    logger.warn("Failed to build instruction");
-                    log("{\"world\":" + toJson(world)
-                                    + ", \"target\": " + plan.get(0).asJson()
-                                    + ", \"it\": " + toJson(it)
-                                    + ", \"orientation\": \"" + newOrientation + "\""
-                            , "NLGFailure");
+                    logInstructionGenerationFailure();
                     return;
                 }
             }
             lastUpdate.set(java.lang.System.currentTimeMillis());
             sendMessage(currentInstruction.toJson());
         }
+    }
+
+    /**
+     * logs the current world state as NLGFailure.
+     */
+    private void logInstructionGenerationFailure() {
+        logger.warn("Failed to build instruction");
+        log("{\"world\":" + toJson(world)
+                        + ", \"target\": " + plan.get(0).asJson()
+                        + ", \"it\": " + toJson(it)
+                        + ", \"orientation\": \"" + lastOrientation + "\""
+                , "NLGFailure");
     }
 
     @Override
