@@ -17,7 +17,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import umd.cs.shop.costs.CostFunction;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -116,6 +119,13 @@ public class SimpleArchitect extends AbstractArchitect {
                     .predictDurationCoeffsFromAllGames();
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
+            case "file":
+                try {
+                    weights = WeightEstimator.WeightResult.fromJson(
+                            Files.readString(Paths.get(config.getWeightFile())));
+                } catch (IOException e) {
+                    throw new RuntimeException("could not read weights file: " + config.getWeightFile());
+                }
             case "default":
                 break;
             default:

@@ -1,5 +1,6 @@
 package de.saar.minecraft.simplearchitect;
 
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
@@ -14,6 +15,7 @@ public class SimpleArchitectConfiguration {
     private int timeoutMinutes = 10;
     private boolean showSecret = true;
     private String weightSource = "default";
+    private String weightFile ="";
     private String weightTrainingDatabase = "jdbc:mariadb://localhost:3306/MINECRAFT";
     private String weightTrainingDBUser = "minecraft";
     private String weightTrainingDBPassword = "";
@@ -101,6 +103,14 @@ public class SimpleArchitectConfiguration {
         this.weightSource = weightSource;
     }
 
+    public String getWeightFile() {
+        return weightFile;
+    }
+
+    public void setWeightFile(String weightFile) {
+        this.weightFile = weightFile;
+    }
+
     public String getName() {
         if (name.equals("")) {
             return "SimpleArchitect-" + instructionlevel;
@@ -113,16 +123,16 @@ public class SimpleArchitectConfiguration {
     }
 
 
+    public String toYaml() {
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+       var yaml = new Yaml(options);
+       return yaml.dump(this);
+    }
 
     @Override
     public String toString() {
-        return "SimpleArchitectConfiguration{" +
-                "secretWord='" + secretWord + '\'' +
-                ", timoutMinBlocks=" + timeoutMinBlocks +
-                ", timeoutMinutes=" + timeoutMinutes +
-                ", showSecret=" + showSecret +
-                ", weightSource=" + weightSource +
-                '}';
+        return toYaml();
     }
 
     public String getInstructionlevel() {
