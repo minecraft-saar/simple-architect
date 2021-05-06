@@ -93,17 +93,22 @@ public class SimpleArchitect extends AbstractArchitect {
     public SimpleArchitect(SimpleArchitectConfiguration config) {
         this.config = config;
         this.realizer = MinecraftRealizer.createRealizer();
+        List<List<Tree<String>>> seedGames = new ArrayList<>();
+        if (config.getAddSeedGames()) {
+            seedGames = this.generateSeedInstructionTrees();
+        }
         switch (config.getWeightSource()) {
             case "random":
                 this.realizer.randomizeExpectedDurations();
                 break;
             case "bootstrapped":
+
                 weights = new WeightEstimator(config.getWeightTrainingDatabase(),
                         config.getWeightTrainingDBUser(),
                         config.getWeightTrainingDBPassword(),
                         config.getTrainingSamplingLowerPercentile(),
                         config.getTrainingSamplingUpperPercentile(),
-                        this.generateSeedInstructionTrees(),
+                        seedGames,
                         this.getArchitectInformation())
                         .sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns(), true);
                 realizer.setExpectedDurations(weights.weights, false);
@@ -114,7 +119,7 @@ public class SimpleArchitect extends AbstractArchitect {
                         config.getWeightTrainingDBPassword(),
                         config.getTrainingSamplingLowerPercentile(),
                         config.getTrainingSamplingUpperPercentile(),
-                        this.generateSeedInstructionTrees(),
+                        seedGames,
                         this.getArchitectInformation())
                     .predictDurationCoeffsFromAllGames();
                 realizer.setExpectedDurations(weights.weights, false);
@@ -212,7 +217,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
     protected List<List<Tree<String>>> generateSeedInstructionTrees() {
         List<List<Tree<String>>> result = new ArrayList<>();
-        for (String currScenario: List.of("house")) {
+        for (String currScenario: List.of("house", "bridge")) {
             for (var il : CostFunction.InstructionLevel.values()) {
                 logger.debug("trying instruction level " + il);
                 var planCreator = new PlanCreator(currScenario, il);
@@ -261,12 +266,15 @@ public class SimpleArchitect extends AbstractArchitect {
         return result;
     }
     
+    protected double getCostForPlanCreator(PlanCreator planCreator) {
+        return getCostForPlanCreator(planCreator, false);
+    }
     /**
      * Returns the predicted cost (in seconds) to fulfill the plan created by {@code planCreator}.
      * The cost is the negative weight of all derivation trees for the plans;
      * introduction messages are ignored.
      */
-    protected double getCostForPlanCreator(PlanCreator planCreator) {
+    protected double getCostForPlanCreator(PlanCreator planCreator, boolean printInstructions) {
         logger.debug("computing cost for " + planCreator.getInstructionLevel());
         var tmpplan = planCreator.getPlan();
         var tmpworld = planCreator.getInitialWorld();
@@ -291,11 +299,15 @@ public class SimpleArchitect extends AbstractArchitect {
                 // ... if we have an estimate for the first occurence
                 if (weights.firstOccurenceWeights.containsKey("i" + currentObjectType)) {
                     realizer.setExpectedDurations(
-                            Map.of(currentObjectType, weights.firstOccurenceWeights.get("i" + currentObjectType)),
+                            Map.of("i" + currentObjectType, weights.firstOccurenceWeights.get("i" + currentObjectType)),
                             false);
                 }
             }
             var tree = realizer.generateReferringExpressionTree(tmpworld, mco, it, Orientation.XMINUS);
+            if (printInstructions) {
+                System.out.println(tree);
+                System.out.println(realizer.treeToReferringExpression(tree) + " (" + -realizer.getWeightForTree(tree) + ")");
+            }
             if (tree == null) {
                 logger.warn("tree is null in the following context: ");
                 logger.warn("current target: " + mco);
@@ -312,7 +324,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 // reset weights
                 if (weights != null && weights.weights.containsKey("i" + currentObjectType)) {
                     realizer.setExpectedDurations(
-                            Map.of(currentObjectType, weights.weights.get("i" + currentObjectType)),
+                            Map.of("i" + currentObjectType, weights.weights.get("i" + currentObjectType)),
                             false);
                 }
             }
@@ -686,6 +698,10 @@ public class SimpleArchitect extends AbstractArchitect {
                 .map(MinecraftObject::asJson)
                 .collect(Collectors.joining(", "))
                 + "]";
+    }
+
+    public MinecraftRealizer getRealizer() {
+        return realizer;
     }
 
     @Override

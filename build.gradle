@@ -47,7 +47,7 @@ dependencies {
     compile group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.1"
     compile 'de.saar.minecraft:jshop:1.2.2'
     runtimeOnly 'de.saar.minecraft:shared-resources:1.1.17'
-    compile group: 'com.github.minecraft-saar', name: 'weight-estimator', version: 'be425e8987881912d975312ab2208283404d2d84'
+    compile group: 'com.github.minecraft-saar', name: 'weight-estimator', version: 'd0cba5f388ace4907e58404461f6d3d6caa00679'
 }
 
 mainClassName = 'de.saar.minecraft.simplearchitect.Main'

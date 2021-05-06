@@ -23,6 +23,7 @@ public class SimpleArchitectConfiguration {
     private int trainingSamplingUpperPercentile = 75;
     private int trainingNumBootstrapRuns = 1000;
     private String instructionlevel = "BLOCK";
+    private boolean addSeedGames = false;
 
    public static SimpleArchitectConfiguration loadYaml(Reader reader) {
         // prepare the YAML reader to read a list of strings
@@ -122,6 +123,13 @@ public class SimpleArchitectConfiguration {
         this.name = name;
     }
 
+    public boolean getAddSeedGames() {
+        return addSeedGames;
+    }
+
+    public void setAddSeedGames(boolean addSeedGames) {
+        this.addSeedGames = addSeedGames;
+    }
 
     public String toYaml() {
         DumperOptions options = new DumperOptions();
