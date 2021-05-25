@@ -8,6 +8,8 @@ import java.io.Reader;
 
 public class SimpleArchitectConfiguration {
 
+    private static final String NOTSET = "__NOTSET__";
+    
     private String name = "";
     private int port = 10000;
     private String secretWord = "secretWord";
@@ -19,6 +21,7 @@ public class SimpleArchitectConfiguration {
     private String weightTrainingDatabase = "jdbc:mariadb://localhost:3306/MINECRAFT";
     private String weightTrainingDBUser = "minecraft";
     private String weightTrainingDBPassword = "";
+    private String weightTrainingArchitectName = NOTSET;
     private int trainingSamplingLowerPercentile = 25;
     private int trainingSamplingUpperPercentile = 75;
     private int trainingNumBootstrapRuns = 1000;
@@ -174,4 +177,16 @@ public class SimpleArchitectConfiguration {
     public void setWeightTrainingDBPassword(String weightTrainingDBPassword) {
         this.weightTrainingDBPassword = weightTrainingDBPassword;
     }
+
+    public String getWeightTrainingArchitectName() {
+        if (weightTrainingArchitectName.equals(NOTSET)) {
+            return name;
+        }
+        return weightTrainingArchitectName;
+    }
+
+    public void setWeightTrainingArchitectName(String weightTrainingArchitectName) {
+        this.weightTrainingArchitectName = weightTrainingArchitectName;
+    }
+
 }

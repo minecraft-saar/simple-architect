@@ -5,5 +5,5 @@ timeoutMinutes: 10
 timeoutMinBlocks: 4
 instructionlevel: adaptive
 weightTrainingDatabase: "jdbc:mariadb://localhost:3306/MINECRAFTTEST"
-weightSource: bootstrapped
+weightSource: optimal
 trainingNumBootstrapRuns: 100

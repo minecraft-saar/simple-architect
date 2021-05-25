@@ -101,15 +101,25 @@ public class SimpleArchitect extends AbstractArchitect {
             case "random":
                 this.realizer.randomizeExpectedDurations();
                 break;
-            case "bootstrapped":
-
+            case "UCB":
                 weights = new WeightEstimator(config.getWeightTrainingDatabase(),
                         config.getWeightTrainingDBUser(),
                         config.getWeightTrainingDBPassword(),
                         config.getTrainingSamplingLowerPercentile(),
                         config.getTrainingSamplingUpperPercentile(),
                         seedGames,
-                        this.getArchitectInformation())
+                        config.getWeightTrainingArchitectName())
+                        .getUCBWithBootstrap(config.getTrainingNumBootstrapRuns(), true);
+                realizer.setExpectedDurations(weights.weights, false);
+                break;
+            case "bootstrapped":
+                weights = new WeightEstimator(config.getWeightTrainingDatabase(),
+                        config.getWeightTrainingDBUser(),
+                        config.getWeightTrainingDBPassword(),
+                        config.getTrainingSamplingLowerPercentile(),
+                        config.getTrainingSamplingUpperPercentile(),
+                        seedGames,
+                        config.getWeightTrainingArchitectName())
                         .sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns(), true);
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
@@ -120,7 +130,7 @@ public class SimpleArchitect extends AbstractArchitect {
                         config.getTrainingSamplingLowerPercentile(),
                         config.getTrainingSamplingUpperPercentile(),
                         seedGames,
-                        this.getArchitectInformation())
+                        config.getWeightTrainingArchitectName())
                     .predictDurationCoeffsFromAllGames();
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
