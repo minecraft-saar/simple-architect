@@ -22,6 +22,8 @@ public class SimpleArchitectConfiguration {
     private String weightTrainingDBUser = "minecraft";
     private String weightTrainingDBPassword = "";
     private String weightTrainingArchitectName = NOTSET;
+    /** The percentage of games played with optimal weights in epsilongreedy setting*/
+    private double epsilonGreedyPercentage = 0.5;
     private int trainingSamplingLowerPercentile = 25;
     private int trainingSamplingUpperPercentile = 75;
     private int trainingNumBootstrapRuns = 1000;
@@ -132,6 +134,15 @@ public class SimpleArchitectConfiguration {
 
     public void setAddSeedGames(boolean addSeedGames) {
         this.addSeedGames = addSeedGames;
+    }
+
+
+    public double getEpsilonGreedyPercentage() {
+        return epsilonGreedyPercentage;
+    }
+
+    public void setEpsilonGreedyPercentage(double epsilonGreedyPercentage) {
+        this.epsilonGreedyPercentage = epsilonGreedyPercentage;
     }
 
     public String toYaml() {

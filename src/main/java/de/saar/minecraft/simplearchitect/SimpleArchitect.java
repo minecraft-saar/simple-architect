@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.random;
 
 public class SimpleArchitect extends AbstractArchitect {
     
@@ -123,6 +124,11 @@ public class SimpleArchitect extends AbstractArchitect {
                         .sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns(), true);
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
+            case "epsilongreedy":
+                if (random() > config.getEpsilonGreedyPercentage()) {
+                    this.realizer.randomizeExpectedDurations();
+                    break;
+                } // else: take optimal case below
             case "optimal":
                 weights = new WeightEstimator(config.getWeightTrainingDatabase(),
                         config.getWeightTrainingDBUser(),
