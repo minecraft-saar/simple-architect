@@ -482,6 +482,7 @@ public class SimpleArchitect extends AbstractArchitect {
             } else {
                 world.add(obj.object);
                 it.removeIf((elem) -> obj.object.getClass().equals(elem.getClass()));
+                it.add(obj.object);
                 var result = new ArrayList<InstructionTuple>();
                 result.add(new InstructionTuple("Great! You finished building a " + obj.name, null, true));
                 result.addAll(computeNextInstructions());
