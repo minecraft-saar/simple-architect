@@ -42,7 +42,7 @@ dependencies {
     implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.1'
     implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.1'
     implementation "org.yaml:snakeyaml:1.25"
-    compile group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: '68c9406213a6f4a20fc3440eb5c780dc50a046b0'
+    compile group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: '4fb4539288cb32a9fe4e1f2447a1487779c98a84'
     compile group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.2.1"
     compile group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.1"
     compile 'de.saar.minecraft:jshop:1.2.2'
