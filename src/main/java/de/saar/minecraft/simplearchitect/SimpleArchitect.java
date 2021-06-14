@@ -144,6 +144,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 try {
                     weights = WeightEstimator.WeightResult.fromJson(
                             Files.readString(Paths.get(config.getWeightFile())));
+                    realizer.setExpectedDurations(weights.weights, false);
                 } catch (IOException e) {
                     throw new RuntimeException("could not read weights file: " + config.getWeightFile());
                 }
@@ -215,7 +216,7 @@ public class SimpleArchitect extends AbstractArchitect {
         readyCounter.countDown();
     }
 
-    protected PlanCreator getOptimalPlan(String scenario) {
+    public PlanCreator getOptimalPlan(String scenario) {
         PlanCreator argmin = null;
         double min = Double.POSITIVE_INFINITY;
         for (var il : CostFunction.InstructionLevel.values()) {
