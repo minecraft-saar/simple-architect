@@ -4,9 +4,9 @@ import de.saar.coli.minecraft.relationextractor.IntroductionMessage;
 import de.saar.coli.minecraft.relationextractor.MinecraftObject;
 import de.saar.coli.minecraft.relationextractor.Relation;
 import de.saar.minecraft.shared.WorldSelectMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleArchitectTest {
     @Test
