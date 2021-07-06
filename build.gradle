@@ -49,7 +49,7 @@ dependencies {
     implementation group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.2.1"
     implementation group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.1"
     implementation 'de.saar.minecraft:jshop:1.2.2'
-    runtimeOnly group: 'com.github.minecraft-saar', name:'shared-resources', version:'7a572320431c89293c09e05d288ae8aa618c044d' 
+    runtimeOnly group: 'com.github.minecraft-saar', name:'shared-resources', version:'d97b4ac7ed96788ba4cb5903c393fa74ddde7dca' 
     implementation group: 'com.github.minecraft-saar', name: 'weight-estimator', version: '15d4b89418b670b5cf47c89dacda9fc96c771e78'
 }
 
