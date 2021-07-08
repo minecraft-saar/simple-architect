@@ -18,7 +18,12 @@ scmVersion {
 
 version = scmVersion.version
 
-sourceCompatibility = 1.11
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(16)
+    }
+}
 
 repositories {
     mavenLocal()
