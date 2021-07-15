@@ -28,8 +28,7 @@ public class PlanCreatorFromFile extends PlanCreator {
         var initialworld = getResourceStream("/de/saar/minecraft/worlds/" + scenario + ".csv");
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
         String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
-        planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, instructionLevel);
-        String precomputedFileName = scenario + "-" + instructionLevel.name().toLowerCase() + ".plan";
+        planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, CostFunction.InstructionLevel.HIGHLEVEL);
         try {
             return Files.readString(new File(planFileName).toPath());
         } catch (IOException e) {
