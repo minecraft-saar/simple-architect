@@ -22,19 +22,21 @@ public class PlanCreator {
 
     private static final Logger logger = LogManager.getLogger(PlanCreator.class);
 
-    private static InputStream getResourceStream(String resName) {
+    protected static InputStream getResourceStream(String resName) {
         return PlanCreator.class.getResourceAsStream(resName);
     }
 
-    private static String getResourceAsString(String resName) {
+    protected static String getResourceAsString(String resName) {
         return new BufferedReader(new InputStreamReader(getResourceStream(resName)))
                 .lines()
                 .collect(Collectors.joining("\n"));
     }
 
-    private Set<MinecraftObject> world;
-    private final List<MinecraftObject> plan;
+    protected Set<MinecraftObject> world;
+    protected List<MinecraftObject> plan;
     protected CostFunction.InstructionLevel instructionLevel;
+    
+    protected PlanCreator(){};
 
     public PlanCreator(String scenario, CostFunction.InstructionLevel instructionLevel) {
         this.instructionLevel = instructionLevel;
@@ -82,7 +84,7 @@ public class PlanCreator {
      * @param instructionLevel at what abstraction level the plan should be
      * @return a plan represented as an s-expression String
      */
-    private String computeJShopPlan(JSJshop planner, String scenario, CostFunction.InstructionLevel instructionLevel) {
+    protected String computeJShopPlan(JSJshop planner, String scenario, CostFunction.InstructionLevel instructionLevel) {
         logger.debug("creating plan for " + scenario);
         int mctsruns = 1; //number of runs the planner tries to do
         int timeout = 10000; //time the planner runs in ms
@@ -95,7 +97,7 @@ public class PlanCreator {
         return getResourceAsString("/de/saar/minecraft/domains/" + precomputedFileName);
     }
 
-    public List<MinecraftObject> computePlan(String scenario) {
+    protected List<MinecraftObject> computePlan(String scenario) {
         logger.debug("computing plan");
         JSJshop planner = new JSJshop();
         var jshopPlan = computeJShopPlan(planner, scenario, this.instructionLevel);

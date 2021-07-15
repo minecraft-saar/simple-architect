@@ -204,10 +204,16 @@ public class SimpleArchitect extends AbstractArchitect {
         setGameId(message.getGameId());
         scenario = message.getName();
         String instructionlevel = config.getInstructionlevel();
-        if (instructionlevel.equals("adaptive")) {
-            planCreator = getOptimalPlan(scenario);
+        if ( ! config.getPlanFile().isEmpty()) {
+            planCreator = new PlanCreatorFromFile(scenario,
+                    CostFunction.InstructionLevel.valueOf(instructionlevel),
+                    config.getPlanFile());
         } else {
-            planCreator = new PlanCreator(scenario, CostFunction.InstructionLevel.valueOf(instructionlevel));
+            if (instructionlevel.equals("adaptive")) {
+                planCreator = getOptimalPlan(scenario);
+            } else {
+                planCreator = new PlanCreator(scenario, CostFunction.InstructionLevel.valueOf(instructionlevel));
+            }
         }
         this.plan = planCreator.getPlan();
         this.world = planCreator.getInitialWorld();

@@ -12,7 +12,7 @@ import java.util.Random;
  * (and to lesser extend lowlevel) was more and more prominent.
  *
  * I think this is because the noise dominates the learned weights and we either have a generally positive
- * weights favoring short instructions 
+ * weights favoring short instructions
  */
 class NoiseMaxExperiment {
 

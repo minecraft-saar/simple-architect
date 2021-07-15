@@ -29,6 +29,8 @@ public class SimpleArchitectConfiguration {
     private int trainingNumBootstrapRuns = 1000;
     private String instructionlevel = "BLOCK";
     private boolean addSeedGames = false;
+    /** If set, overrides the plan created by the planner.*/
+    private String planFile = "";
 
    public static SimpleArchitectConfiguration loadYaml(Reader reader) {
         // prepare the YAML reader to read a list of strings
@@ -198,6 +200,14 @@ public class SimpleArchitectConfiguration {
 
     public void setWeightTrainingArchitectName(String weightTrainingArchitectName) {
         this.weightTrainingArchitectName = weightTrainingArchitectName;
+    }
+
+    public String getPlanFile() {
+        return planFile;
+    }
+
+    public void setPlanFile(String planFile) {
+        this.planFile = planFile;
     }
 
 }
