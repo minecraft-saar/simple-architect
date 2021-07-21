@@ -109,7 +109,8 @@ public class SimpleArchitect extends AbstractArchitect {
                         config.getTrainingSamplingLowerPercentile(),
                         config.getTrainingSamplingUpperPercentile(),
                         seedGames,
-                        config.getWeightTrainingArchitectName())
+                        config.getWeightTrainingArchitectName(),
+                        config.getDeletionsAsCosts())
                         .getUCBWithBootstrap(config.getTrainingNumBootstrapRuns(), true);
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
@@ -120,7 +121,8 @@ public class SimpleArchitect extends AbstractArchitect {
                         config.getTrainingSamplingLowerPercentile(),
                         config.getTrainingSamplingUpperPercentile(),
                         seedGames,
-                        config.getWeightTrainingArchitectName())
+                        config.getWeightTrainingArchitectName(),
+                        config.getDeletionsAsCosts())
                         .sampleDurationCoeffsWithBootstrap(config.getTrainingNumBootstrapRuns(), true);
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
@@ -136,7 +138,8 @@ public class SimpleArchitect extends AbstractArchitect {
                         config.getTrainingSamplingLowerPercentile(),
                         config.getTrainingSamplingUpperPercentile(),
                         seedGames,
-                        config.getWeightTrainingArchitectName())
+                        config.getWeightTrainingArchitectName(),
+                        config.getDeletionsAsCosts())
                     .predictDurationCoeffsFromAllGames();
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
@@ -206,7 +209,6 @@ public class SimpleArchitect extends AbstractArchitect {
         String instructionlevel = config.getInstructionlevel();
         if ( ! config.getPlanFile().isEmpty()) {
             planCreator = new PlanCreatorFromFile(scenario,
-                    CostFunction.InstructionLevel.valueOf(instructionlevel),
                     config.getPlanFile());
         } else {
             if (instructionlevel.equals("adaptive")) {

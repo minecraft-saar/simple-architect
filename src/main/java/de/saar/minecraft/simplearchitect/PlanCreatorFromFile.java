@@ -13,10 +13,10 @@ public class PlanCreatorFromFile extends PlanCreator {
     private static final Logger logger = LogManager.getLogger(PlanCreatorFromFile.class);
     protected String planFileName;
 
-    public PlanCreatorFromFile(String scenario, CostFunction.InstructionLevel instructionLevel, String planFileName) {
+    public PlanCreatorFromFile(String scenario, String planFileName) {
         super();
         this.planFileName = planFileName;
-        this.instructionLevel = instructionLevel;
+        this.instructionLevel = CostFunction.InstructionLevel.HIGHLEVEL;
         this.plan = computePlan(scenario);
     }
 

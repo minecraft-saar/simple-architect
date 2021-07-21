@@ -58,7 +58,7 @@ dependencies {
 	    strictly 'release-1.1.19'
 	}
     }
-    implementation group: 'com.github.minecraft-saar', name: 'weight-estimator', version: '15d4b89418b670b5cf47c89dacda9fc96c771e78'
+    implementation group: 'com.github.minecraft-saar', name: 'weight-estimator', version: '51941b62e8fbdee7dccf772716ee97f4520f4675'
 }
 
 mainClassName = 'de.saar.minecraft.simplearchitect.Main'

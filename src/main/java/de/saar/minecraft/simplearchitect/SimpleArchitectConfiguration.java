@@ -32,6 +32,16 @@ public class SimpleArchitectConfiguration {
     /** If set, overrides the plan created by the planner.*/
     private String planFile = "";
 
+    public boolean getDeletionsAsCosts() {
+        return deletionsAsCosts;
+    }
+
+    public void setDeletionsAsCosts(boolean deletionsAsCosts) {
+        this.deletionsAsCosts = deletionsAsCosts;
+    }
+
+    private boolean deletionsAsCosts = false;
+
    public static SimpleArchitectConfiguration loadYaml(Reader reader) {
         // prepare the YAML reader to read a list of strings
         Constructor constructor = new Constructor(SimpleArchitectConfiguration.class);
