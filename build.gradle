@@ -52,7 +52,7 @@ dependencies {
     implementation group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: 'ab9c7805b07b86cfed3ceced477178d2015140a6'
     implementation group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.2.1"
     implementation group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.1"
-    implementation 'de.saar.minecraft:jshop:1.2.2'
+    implementation 'de.saar.minecraft:jshop:1.2.4'
     runtimeOnly ('com.github.minecraft-saar:shared-resources') {
 	version {
 	    strictly 'release-1.1.19'
