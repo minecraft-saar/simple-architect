@@ -384,10 +384,14 @@ public class SimpleArchitect extends AbstractArchitect {
               - block is incorrect
              */
             // current object is complete
+            // ID for Stone Bricks
+            String correctBlockType = "STONE_BRICKS";
             if (currentInstructionBlocksLeft.size() == 1 && currentInstructionBlocksLeft.contains(blockPlaced)) {
                 numCorrectBlocks += 1;
                 world.add(plan.get(0));
                 alreadyPlacedBlocks.add(blockPlaced);
+                //send message to protect this block since it is correct and change type to ID stored in correctBlockType
+                sendControlMessage(blockPlaced.xpos, blockPlaced.ypos, blockPlaced.zpos, correctBlockType);
                 // we can refer to the HLO and the block as it.
                 // remove all blocks because we add a new block
                 // remove all objects of the type we just finished because we add that one.
@@ -410,6 +414,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 numCorrectBlocks += 1;
                 currentInstructionBlocksLeft.remove(blockPlaced);
                 alreadyPlacedBlocks.add(blockPlaced);
+                sendControlMessage(blockPlaced.xpos, blockPlaced.ypos, blockPlaced.zpos, correctBlockType);
                 // We are in the middle of an ongoing instruction.
                 // Therefore, we still use the reference frame from the
                 // start of the interaction and do not update "it".
