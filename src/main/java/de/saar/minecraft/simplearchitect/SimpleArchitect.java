@@ -168,6 +168,7 @@ public class SimpleArchitect extends AbstractArchitect {
         // sendMessage("you can move around with w,a,s,d and look around with your mouse.");
         // sendMessage("Place blocks with the RIGHT mouse button, delete with LEFT mouse button.");
         sendMessage("press spacebar twice to fly and shift to dive.");
+        sendMessage("If you place a block at the correct position, it will appear as stone bricks.");
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ignored) {
