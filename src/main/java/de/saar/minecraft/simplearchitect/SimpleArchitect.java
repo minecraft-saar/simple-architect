@@ -63,6 +63,7 @@ public class SimpleArchitect extends AbstractArchitect {
 
     private static final Logger logger = LogManager.getLogger(SimpleArchitect.class);
     private static final int RESEND_INTERVAL = 12000;
+    private static final int MESSAGE_PAUSE = 500;
 
     protected PlanCreator planCreator;
     
@@ -361,7 +362,7 @@ public class SimpleArchitect extends AbstractArchitect {
         }
         return totalCost;
     }
-    
+
     @Override
     public synchronized void handleBlockPlaced(BlockPlacedMessage request) {
         // only perform one computation at a time.
@@ -435,6 +436,19 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
+    private void sendMessageSpaced(String message){
+        sendMessage("|");
+        sendMessage("|");
+        sendMessage("|");
+        sendMessage("|");
+        sendMessage("|");
+        sendMessage(message);
+        sendMessage("|");
+        sendMessage("|");
+        sendMessage("|");
+        sendMessage("|");
+    }
+
     private void sendMessages(List<InstructionTuple> responses) {
         sendMessages(responses, true);
     }
@@ -454,7 +468,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 } catch (InterruptedException ignored) {
                 }
             }
-            sendMessage(response.toJson());
+            sendMessageSpaced(response.toJson());
             isFirst = false;
         }
     }
@@ -652,6 +666,9 @@ public class SimpleArchitect extends AbstractArchitect {
                 return;
             }
             logger.debug("handleStatusInformation " + request);
+            if(lastUpdate.get() + MESSAGE_PAUSE > java.lang.System.currentTimeMillis()){
+                return;
+            }
             var x = request.getXDirection();
             var z = request.getZDirection();
             Orientation newOrientation;
@@ -703,7 +720,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 }
             }
             lastUpdate.set(java.lang.System.currentTimeMillis());
-            sendMessage(currentInstruction.toJson());
+            sendMessageSpaced(currentInstruction.toJson());
         }
     }
 
