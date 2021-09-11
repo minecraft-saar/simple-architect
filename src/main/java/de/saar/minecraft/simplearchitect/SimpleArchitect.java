@@ -426,7 +426,9 @@ public class SimpleArchitect extends AbstractArchitect {
                 // third case: incorrect block
                 incorrectlyPlacedBlocks.add(blockPlaced);
                 alreadyPlacedBlocks.add(blockPlaced);
+                sendMessageSpaces();
                 sendMessage("Not there! please remove that block again and " + currentInstruction.instruction);
+                sendMessageSpaces();
                 it.removeIf((elem) -> elem instanceof Block);
                 it.add(blockPlaced);
                 // recompute instruction with current block as "it"
@@ -437,13 +439,8 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
-    private void sendMessageSpaced(String message){
+    private void sendMessageSpaces(){
         sendMessage("|");
-        sendMessage("|");
-        sendMessage("|");
-        sendMessage("|");
-        sendMessage("|");
-        sendMessage(message);
         sendMessage("|");
         sendMessage("|");
         sendMessage("|");
@@ -461,7 +458,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 }
             } else {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                 } catch (InterruptedException ignored) {
                 }
             }
@@ -478,6 +475,7 @@ public class SimpleArchitect extends AbstractArchitect {
         boolean isFirst = true;
         for (var response: responses) {
             if (isFirst) {
+                sendMessageSpaces();
                 if (sendGreat && ! response.instruction.startsWith("Great")) {
                     response = new InstructionTuple( "Great! now " + response.instruction,
                             response.tree,
@@ -485,13 +483,14 @@ public class SimpleArchitect extends AbstractArchitect {
                 }
             } else {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (InterruptedException ignored) {
                 }
             }
-            sendMessageSpaced(response.toJson());
+            sendMessage(response.toJson());
             isFirst = false;
         }
+        sendMessageSpaces();
     }
 
     /**
@@ -741,7 +740,9 @@ public class SimpleArchitect extends AbstractArchitect {
                 }
             }
             lastUpdate.set(java.lang.System.currentTimeMillis());
-            sendMessageSpaced(currentInstruction.toJson());
+            sendMessageSpaces();
+            sendMessage(currentInstruction.toJson());
+            sendMessageSpaces();
         }
     }
 
