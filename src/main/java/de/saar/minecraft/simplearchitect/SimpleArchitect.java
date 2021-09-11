@@ -62,7 +62,7 @@ public class SimpleArchitect extends AbstractArchitect {
     }
 
     private static final Logger logger = LogManager.getLogger(SimpleArchitect.class);
-    private static final int RESEND_INTERVAL = 12000;
+    private static final int RESEND_INTERVAL = 11000;
     private static final int MESSAGE_PAUSE = 500;
 
     protected PlanCreator planCreator;
@@ -75,7 +75,7 @@ public class SimpleArchitect extends AbstractArchitect {
     protected AtomicInteger numBlocksPlaced = new AtomicInteger(0);
     protected AtomicLong lastUpdate = new AtomicLong(0);
     protected InstructionTuple currentInstruction;
-    protected Orientation lastOrientation = Orientation.ZMINUS;
+    protected Orientation lastOrientation = Orientation.XMINUS;
     protected String scenario;
     private final CountDownLatch readyCounter = new CountDownLatch(1);
     private final CountDownLatch objectiveSet = new CountDownLatch(1);
@@ -192,7 +192,8 @@ public class SimpleArchitect extends AbstractArchitect {
         }
         log(planString, "InitialPlan");
         var instructions = computeNextInstructions();
-        sendMessages(instructions, false);
+        sendMessagesInitial(instructions, false);
+        lastUpdate.set(java.lang.System.currentTimeMillis());
         objectiveSet.countDown();
     }
 
@@ -447,6 +448,26 @@ public class SimpleArchitect extends AbstractArchitect {
         sendMessage("|");
         sendMessage("|");
         sendMessage("|");
+    }
+
+    private void sendMessagesInitial(List<InstructionTuple> responses, boolean sendGreat) {
+        boolean isFirst = true;
+        for (var response: responses) {
+            if (isFirst) {
+                if (sendGreat && ! response.instruction.startsWith("Great")) {
+                    response = new InstructionTuple( "Great! now " + response.instruction,
+                            response.tree,
+                            response.isNewInstruction);
+                }
+            } else {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+            }
+            sendMessage(response.toJson());
+            isFirst = false;
+        }
     }
 
     private void sendMessages(List<InstructionTuple> responses) {
