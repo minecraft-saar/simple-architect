@@ -426,6 +426,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 // third case: incorrect block
                 incorrectlyPlacedBlocks.add(blockPlaced);
                 alreadyPlacedBlocks.add(blockPlaced);
+                lastUpdate.set(java.lang.System.currentTimeMillis());
                 sendMessageSpaces();
                 sendMessage("Not there! please remove that block again and " + currentInstruction.instruction);
                 sendMessageSpaces();
@@ -462,6 +463,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 } catch (InterruptedException ignored) {
                 }
             }
+            lastUpdate.set(java.lang.System.currentTimeMillis());
             sendMessage(response.toJson());
             isFirst = false;
         }
@@ -487,6 +489,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 } catch (InterruptedException ignored) {
                 }
             }
+            lastUpdate.set(java.lang.System.currentTimeMillis());
             sendMessage(response.toJson());
             isFirst = false;
         }
@@ -655,6 +658,7 @@ public class SimpleArchitect extends AbstractArchitect {
         
         // If a block that should be placed is removed again, re-add it to the plan
         // and instruct the user to place this block again
+        //should never happen with block protection
         if (alreadyPlacedBlocks.contains(block)) {
             // We cannot say "previous block" when the last action was a removal
             it.removeIf((elem) -> elem instanceof Block);
