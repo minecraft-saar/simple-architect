@@ -655,21 +655,24 @@ public class SimpleArchitect extends AbstractArchitect {
             // we already have this block in our plan, no need to add it.
             return;
         }
-        
+
         // If a block that should be placed is removed again, re-add it to the plan
         // and instruct the user to place this block again
         //should never happen with block protection
         if (alreadyPlacedBlocks.contains(block)) {
             // We cannot say "previous block" when the last action was a removal
             it.removeIf((elem) -> elem instanceof Block);
-            alreadyPlacedBlocks.remove(block);
+            world.add(block);
+            //need to rmeove this with block protection, otherwise strange race conditions can appear
+            //that suggest that no block is there in our system while a protected block is present
+            /*alreadyPlacedBlocks.remove(block);
             plan.add(0, block);
             var newInstructions = computeNextInstructions();
             var currI = newInstructions.get(0);
             currI.isNewInstruction = false;
             sendMessage("Please add this block again.");
             sendMessage(currI.toJson());
-            lastUpdate.set(java.lang.System.currentTimeMillis());
+            lastUpdate.set(java.lang.System.currentTimeMillis());*/
         } else {
             // Just ignore the vandalism to preexisting blocks.
         }
