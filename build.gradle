@@ -8,6 +8,12 @@ plugins {
 group 'de.saar.minecraft'
 description 'simple-architect'
 
+configurations.all {
+  resolutionStrategy {
+    force 'xml-apis:xml-apis:1.4.01'
+  }
+}
+
 scmVersion {
     ignoreUncommittedChanges = false
     tag {
@@ -39,8 +45,9 @@ repositories {
     // We need this repository because alto uses a MacOS window menu
     // library that seems to be not packaged but is a transitive dependency
     // of alto.
-    maven { url "http://akci.coli.uni-saarland.de/artifactory/external"
-            allowInsecureProtocol = true }
+    //maven { url "http://akci.coli.uni-saarland.de/artifactory/external"
+    //        allowInsecureProtocol = true }
+    maven {url 'https://raw.github.com/coli-saar/alto/repository/'}
 }
 
 dependencies {
@@ -49,10 +56,10 @@ dependencies {
     implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.1'
     implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.1'
     implementation "org.yaml:snakeyaml:1.25"
-    implementation group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: 'fda8aea68fa5cb9835624a7a1f9efef5f50760db'
+    implementation group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: '114d7acd9cbb2cfe112dff02421c3890eec43547'
     implementation group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.2.5"
     implementation group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.5"
-    implementation 'de.saar.minecraft:jshop:1.2.4'
+    implementation 'de.saar.minecraft:jshop:1.2.5'
     runtimeOnly ('com.github.minecraft-saar:shared-resources') {
 	version {
 	    strictly 'release-1.1.19'
