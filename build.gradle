@@ -56,10 +56,10 @@ dependencies {
     implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.1'
     implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.1'
     implementation "org.yaml:snakeyaml:1.25"
-    implementation group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: '114d7acd9cbb2cfe112dff02421c3890eec43547'
+    implementation group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: '4a1eb700a3ff183fcfdcc0155d6ad884e3145b59'
     implementation group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.2.5"
     implementation group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.5"
-    implementation 'de.saar.minecraft:jshop:1.2.5'
+    implementation 'de.saar.minecraft:jshop:1.2.6'
     runtimeOnly ('com.github.minecraft-saar:shared-resources') {
 	version {
 	    strictly 'release-1.1.19'
