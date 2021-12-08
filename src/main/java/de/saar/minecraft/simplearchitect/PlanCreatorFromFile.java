@@ -22,13 +22,11 @@ public class PlanCreatorFromFile extends PlanCreator {
 
     protected String computeJShopPlan(JSJshop planner, String scenario, CostFunction.InstructionLevel instructionLevel) {
         logger.debug("creating plan for " + scenario);
-        int mctsruns = 1; //number of runs the planner tries to do
-        int timeout = 10000; //time the planner runs in ms
 
         var initialworld = getResourceStream("/de/saar/minecraft/worlds/" + scenario + ".csv");
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
         String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
-        planner.nlgSearch(mctsruns, timeout, initialworld, problem, domain, CostFunction.InstructionLevel.HIGHLEVEL);
+        planner.transformWorldForArchitect(initialworld, problem, domain);
         try {
             return Files.readString(new File(planFileName).toPath());
         } catch (IOException e) {
