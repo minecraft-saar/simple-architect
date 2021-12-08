@@ -248,7 +248,7 @@ public class PlanCreator {
             x3 = x1 - length + 1;
         }
         y3 = y1 + height -1;
-        return new Stairs( "stairs", x1, y1, z1, x2, z2, x3, y3, z3);
+        return new Stairs( "staircase", x1, y1, z1, x2, z2, x3, y3, z3);
     }
 
     public List<MinecraftObject> transformPlan(String jshopPlan) {
@@ -314,11 +314,11 @@ public class PlanCreator {
                     break;
                 case "(!build-stairs-starting":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createStairs(taskArray), true, "stairs"));
+                        result.add(new IntroductionMessage(createStairs(taskArray), true, "staircase"));
                     break;
                 case "(!build-stairs-finished":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createStairs(taskArray), false, "stairs"));
+                        result.add(new IntroductionMessage(createStairs(taskArray), false, "staircase"));
                     break;
                 case "(!build-stairs":
                     result.add(createStairs(taskArray));
