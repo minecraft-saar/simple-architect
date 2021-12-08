@@ -217,6 +217,43 @@ public class PlanCreator {
         return new Row("row", x1, z1, x2, z2, y1);
     }
 
+    public MinecraftObject createStairs(String[] taskArray) {
+        int x1, x2, x3, y1, y3, z1, z2, z3, length, width, height, dir;
+        x1 = (int) Double.parseDouble(taskArray[1]);
+        y1 = (int) Double.parseDouble(taskArray[2]);
+        z1 = (int) Double.parseDouble(taskArray[3]);
+        width = (int) Double.parseDouble(taskArray[4]);
+        length =  (int) Double.parseDouble(taskArray[5]);
+        height =  (int) Double.parseDouble(taskArray[6]);
+        dir =  (int) Double.parseDouble(taskArray[7]);
+        //east=1=>x+, west=2=>x-, north=3=>z-, south=4=>z+
+        if (dir == 1) {
+            x2 = x1 + width - 1;
+            z2 = z1;
+            x3 = x1;
+            z3 = z1 + length - 1;
+        } else if (dir == 2) {
+            x2 = x1;
+            x1 = x1 - width + 1;
+            z2 = z1;
+            x3 = x1;
+            z3 = z1 - length + 1;
+        } else if (dir == 3) {
+            z2 = z1;
+            z1 = z1 - width + 1;
+            x2 = x1;
+            z3 = z1;
+            x3 = x1 + length -1;
+        } else {
+            z2 = z1 + width - 1;
+            x2 = x1;
+            z3 = z1;
+            x3 = x1 - length + 1;
+        }
+        y3 = y1 + height -1;
+        return new Stairs( "stairs", x1, y1, z1, x2, z2, x3, y3, z3);
+    }
+
     public List<MinecraftObject> transformPlan(String jshopPlan) {
         var result = new ArrayList<MinecraftObject>();
         String[] tasks = jshopPlan.split("\n");
@@ -277,6 +314,17 @@ public class PlanCreator {
                     break;
                 case "(!build-floor":
                     result.add(createFloor(taskArray));
+                    break;
+                case "(!build-stairs-starting":
+                    if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
+                        result.add(new IntroductionMessage(createStairs(taskArray), true, "stairs"));
+                    break;
+                case "(!build-stairs-finished":
+                    if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
+                        result.add(new IntroductionMessage(createStairs(taskArray), false, "stairs"));
+                    break;
+                case "(!build-stairs":
+                    result.add(createStairs(taskArray));
                     break;
                 case "(!place-block-hidden":
                     break;

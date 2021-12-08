@@ -62,7 +62,7 @@ dependencies {
     implementation 'de.saar.minecraft:jshop:1.2.6'
     runtimeOnly ('com.github.minecraft-saar:shared-resources') {
 	version {
-	    strictly 'release-1.1.19'
+	    strictly 'release-1.1.20'
 	}
     }
     implementation group: 'com.github.minecraft-saar', name: 'weight-estimator', version: '51941b62e8fbdee7dccf772716ee97f4520f4675'
