@@ -1,9 +1,13 @@
-package de.saar.minecraft.simplearchitect;
+package de.saar.minecraft.simplearchitect.experiments;
 
 import de.saar.coli.minecraft.relationextractor.IntroductionMessage;
 import de.saar.coli.minecraft.relationextractor.MinecraftObject;
 import de.saar.coli.minecraft.relationextractor.Relation;
 import de.saar.minecraft.shared.WorldSelectMessage;
+import de.saar.minecraft.simplearchitect.PlanCreator;
+import de.saar.minecraft.simplearchitect.PlanCreatorFromFile;
+import de.saar.minecraft.simplearchitect.SimpleArchitect;
+import de.saar.minecraft.simplearchitect.SimpleArchitectConfiguration;
 import umd.cs.shop.costs.CostFunction;
 
 import java.util.*;
@@ -18,7 +22,7 @@ import java.util.*;
  * I think this is because the noise dominates the learned weights and we either have a generally positive
  * weights favoring short instructions
  */
-class NoiseMaxExperiment {
+public class NoiseMaxExperiment {
 
     public static void main(String[] args) {
         var nme = new NoiseMaxExperiment();
@@ -68,7 +72,7 @@ class NoiseMaxExperiment {
 	    return plan.getInstructionLevel();
     }
 
-    class NoiseMaxArchitect extends SimpleArchitect {
+    static class NoiseMaxArchitect extends SimpleArchitect {
         public NoiseMaxArchitect(SimpleArchitectConfiguration config) {
             super(config);
         }

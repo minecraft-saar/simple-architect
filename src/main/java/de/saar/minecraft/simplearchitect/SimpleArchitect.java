@@ -84,7 +84,7 @@ public class SimpleArchitect extends AbstractArchitect {
     private long startTime;
     private boolean SecretWordThreadStarted = false;
     private int numCorrectBlocks = 0;
-    protected WeightEstimator.WeightResult weights;
+    public WeightEstimator.WeightResult weights;
 
     protected final SimpleArchitectConfiguration config;
 
