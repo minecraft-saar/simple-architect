@@ -31,11 +31,13 @@ import static java.lang.Math.abs;
 import static java.lang.Math.random;
 
 public class SimpleArchitect extends AbstractArchitect {
-    
+
     private static class InstructionTuple {
         public final String instruction;
         public final Tree<String> tree;
-        /** marks whether we instruct the object for the first time.*/
+        /**
+         * marks whether we instruct the object for the first time.
+         */
         public boolean isNewInstruction;
 
         public InstructionTuple(String instruction, Tree<String> tree, boolean isNewInstruction) {
@@ -61,14 +63,14 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
-    private static final Logger logger = LogManager.getLogger(SimpleArchitect.class);
+    protected static final Logger logger = LogManager.getLogger(SimpleArchitect.class);
     private static final int RESEND_INTERVAL = 11000;
     private static final int MESSAGE_PAUSE = 500;
 
     protected PlanCreator planCreator;
-    
+
     protected HashSet<MinecraftObject> it = new HashSet<>();
-    private List<MinecraftObject> plan;
+    protected List<MinecraftObject> plan;
     private Set<Block> currentInstructionBlocksLeft = Set.of();
     protected Set<MinecraftObject> world;
     protected MinecraftRealizer realizer;
@@ -77,19 +79,23 @@ public class SimpleArchitect extends AbstractArchitect {
     protected InstructionTuple currentInstruction;
     protected Orientation lastOrientation = Orientation.XMINUS;
     protected String scenario;
-    private final CountDownLatch readyCounter = new CountDownLatch(1);
+    protected final CountDownLatch readyCounter = new CountDownLatch(1);
     private final CountDownLatch objectiveSet = new CountDownLatch(1);
     private long startTime;
     private boolean SecretWordThreadStarted = false;
     private int numCorrectBlocks = 0;
     protected WeightEstimator.WeightResult weights;
 
-    private final SimpleArchitectConfiguration config;
+    protected final SimpleArchitectConfiguration config;
 
-    /** These are all blocks that exist in the world (except water block)*/
+    /**
+     * These are all blocks that exist in the world (except water block)
+     */
     protected Set<Block> alreadyPlacedBlocks = new HashSet<>();
-    /** These are blocks that were placed but we did not instruct them (yet)
-    They might be part of what we want to instruct later on though.*/
+    /**
+     * These are blocks that were placed but we did not instruct them (yet)
+     * They might be part of what we want to instruct later on though.
+     */
     protected Set<Block> incorrectlyPlacedBlocks = new HashSet<>();
 
     public SimpleArchitect(SimpleArchitectConfiguration config) {
@@ -141,7 +147,7 @@ public class SimpleArchitect extends AbstractArchitect {
                         seedGames,
                         config.getWeightTrainingArchitectName(),
                         config.getDeletionsAsCosts())
-                    .predictDurationCoeffsFromAllGames();
+                        .predictDurationCoeffsFromAllGames();
                 realizer.setExpectedDurations(weights.weights, false);
                 break;
             case "file":
@@ -156,7 +162,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 break;
             default:
                 throw new RuntimeException("unknown value \"" + config.getWeightSource() + "\" for weightSource. "
-                + "valid values: random, bootstrapped, optimal, default");
+                        + "valid values: random, bootstrapped, optimal, default");
         }
     }
 
@@ -210,15 +216,11 @@ public class SimpleArchitect extends AbstractArchitect {
         setGameId(message.getGameId());
         scenario = message.getName();
         String instructionlevel = config.getInstructionlevel();
-        if ( ! config.getPlanFile().isEmpty()) {
+        if (!config.getPlanFile().isEmpty()) {
             planCreator = new PlanCreatorFromFile(scenario,
                     config.getPlanFile());
         } else {
-            if (instructionlevel.equals("adaptive")) {
-                planCreator = getOptimalPlan(scenario);
-            } else {
-                planCreator = new PlanCreator(scenario, CostFunction.InstructionLevel.valueOf(instructionlevel));
-            }
+            planCreator = new PlanCreator(scenario, CostFunction.InstructionLevel.valueOf(instructionlevel));
         }
         this.plan = planCreator.getPlan();
         this.world = planCreator.getInitialWorld();
@@ -227,25 +229,9 @@ public class SimpleArchitect extends AbstractArchitect {
         readyCounter.countDown();
     }
 
-    public PlanCreator getOptimalPlan(String scenario) {
-        PlanCreator argmin = null;
-        double min = Double.POSITIVE_INFINITY;
-        for (var il : CostFunction.InstructionLevel.values()) {
-            logger.warn("trying instruction level " +  il);
-            var planCreator = new PlanCreator(scenario, il);
-            double cost = getCostForPlanCreator(planCreator);
-            logger.warn("cost: " + cost);
-            if (cost < min) {
-                argmin = planCreator;
-                min = cost;
-            }
-        }
-        return argmin;
-    }
-
     protected List<List<Tree<String>>> generateSeedInstructionTrees() {
         List<List<Tree<String>>> result = new ArrayList<>();
-        for (String currScenario: List.of("house", "bridge")) {
+        for (String currScenario : List.of("house", "bridge")) {
             for (var il : CostFunction.InstructionLevel.values()) {
                 logger.debug("trying instruction level " + il);
                 var planCreator = new PlanCreator(currScenario, il);
@@ -254,7 +240,7 @@ public class SimpleArchitect extends AbstractArchitect {
         }
         return result;
     }
-    
+
     protected List<Tree<String>> generateSeedInstructionTrees(PlanCreator planCreator) {
         var result = new ArrayList<Tree<String>>();
         var tmpplan = planCreator.getPlan();
@@ -262,10 +248,9 @@ public class SimpleArchitect extends AbstractArchitect {
 
         Set<MinecraftObject> it = new HashSet<>();
         Set<String> knownOjbectTypes = new HashSet<>();
-        for (var mco: tmpplan) {
-            if (mco instanceof IntroductionMessage) {
-                var im = (IntroductionMessage) mco;
-                if (! im.starting) {
+        for (var mco : tmpplan) {
+            if (mco instanceof IntroductionMessage im) {
+                if (!im.starting) {
                     tmpworld.add(im.object);
                     it.add(im.object);
                     knownOjbectTypes.add(((IntroductionMessage) mco).object.getClass().getSimpleName().toLowerCase());
@@ -273,12 +258,12 @@ public class SimpleArchitect extends AbstractArchitect {
                 continue;
             }
             String currentObjectType = mco.getClass().getSimpleName().toLowerCase();
-            boolean objectFirstOccurence = ! knownOjbectTypes.contains(currentObjectType);
+            boolean objectFirstOccurence = !knownOjbectTypes.contains(currentObjectType);
             var tree = realizer.generateReferringExpressionTree(tmpworld, mco, it, Orientation.ZMINUS);
             if (tree != null) {
                 result.add(tree);
             } else {
-                logger.warn("tree is null for object " + mco.toString());
+                logger.warn("tree is null for object " + mco);
                 logger.warn("world: " + toJson(tmpworld));
                 logger.warn("it: " + toJson(it));
             }
@@ -292,76 +277,6 @@ public class SimpleArchitect extends AbstractArchitect {
             }
         }
         return result;
-    }
-    
-    protected double getCostForPlanCreator(PlanCreator planCreator) {
-        return getCostForPlanCreator(planCreator, false);
-    }
-    /**
-     * Returns the predicted cost (in seconds) to fulfill the plan created by {@code planCreator}.
-     * The cost is the negative weight of all derivation trees for the plans;
-     * introduction messages are ignored.
-     */
-    protected double getCostForPlanCreator(PlanCreator planCreator, boolean printInstructions) {
-        logger.debug("computing cost for " + planCreator.getInstructionLevel());
-        var tmpplan = planCreator.getPlan();
-        var tmpworld = planCreator.getInitialWorld();
-        double totalCost = 0;
-        HashSet<MinecraftObject> it = new HashSet<>();
-        Set<String> knownOjbectTypes = new HashSet<>();
-        for (var mco: tmpplan) {
-            if (mco instanceof IntroductionMessage) {
-                var im = (IntroductionMessage)mco;
-                if (! im.starting) {
-                    tmpworld.add(im.object);
-                    it.add(im.object);
-                    knownOjbectTypes.add(im.object.getClass().getSimpleName().toLowerCase());
-                }
-                continue;
-            }
-            String currentObjectType = mco.getClass().getSimpleName().toLowerCase();
-            logger.debug("current object " + currentObjectType);
-            boolean objectFirstOccurence = ! knownOjbectTypes.contains(currentObjectType);
-            if (objectFirstOccurence && weights != null) {
-                // temporarily set the weight to the first occurence one
-                // ... if we have an estimate for the first occurence
-                if (weights.firstOccurenceWeights.containsKey("i" + currentObjectType)) {
-                    realizer.setExpectedDurations(
-                            Map.of("i" + currentObjectType, weights.firstOccurenceWeights.get("i" + currentObjectType)),
-                            false);
-                }
-            }
-            var tree = realizer.generateReferringExpressionTree(tmpworld, mco, it, Orientation.XMINUS);
-            if (printInstructions) {
-                System.out.println(tree);
-                System.out.println(realizer.treeToReferringExpression(tree) + " (" + -realizer.getWeightForTree(tree) + ")");
-            }
-            if (tree == null) {
-                logger.warn("tree is null in the following context: ");
-                logger.warn("current target: " + mco);
-                logger.warn("current world: " + toJson(tmpworld));
-                logger.warn("it: " + toJson(it));
-            }
-            totalCost -= realizer.getWeightForTree(tree);
-            tmpworld.add(mco);
-            tmpworld.addAll(mco.getBlocks());
-            it.clear();
-            it.add(mco);
-            if (objectFirstOccurence) {
-                knownOjbectTypes.add(currentObjectType);
-                // reset weights
-                if (weights != null && weights.weights.containsKey("i" + currentObjectType)) {
-                    realizer.setExpectedDurations(
-                            Map.of("i" + currentObjectType, weights.weights.get("i" + currentObjectType)),
-                            false);
-                }
-            }
-
-            /* TODO: In a real world we would also have the last block as "it", but we don't know which it is.
-               Add a random block from getBlocks?
-             */
-        }
-        return totalCost;
     }
 
     @Override
@@ -440,7 +355,7 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
-    private void sendMessageSpaces(){
+    private void sendMessageSpaces() {
         sendMessage("|");
         sendMessage("|");
         sendMessage("|");
@@ -450,10 +365,10 @@ public class SimpleArchitect extends AbstractArchitect {
 
     private void sendMessagesInitial(List<InstructionTuple> responses, boolean sendGreat) {
         boolean isFirst = true;
-        for (var response: responses) {
+        for (var response : responses) {
             if (isFirst) {
-                if (sendGreat && ! response.instruction.startsWith("Great")) {
-                    response = new InstructionTuple( "Great! now " + response.instruction,
+                if (sendGreat && !response.instruction.startsWith("Great")) {
+                    response = new InstructionTuple("Great! now " + response.instruction,
                             response.tree,
                             response.isNewInstruction);
                 }
@@ -475,11 +390,11 @@ public class SimpleArchitect extends AbstractArchitect {
 
     private void sendMessages(List<InstructionTuple> responses, boolean sendGreat) {
         boolean isFirst = true;
-        for (var response: responses) {
+        for (var response : responses) {
             if (isFirst) {
                 sendMessageSpaces();
-                if (sendGreat && ! response.instruction.startsWith("Great")) {
-                    response = new InstructionTuple( "Great! now " + response.instruction,
+                if (sendGreat && !response.instruction.startsWith("Great")) {
+                    response = new InstructionTuple("Great! now " + response.instruction,
                             response.tree,
                             response.isNewInstruction);
                 }
@@ -512,6 +427,7 @@ public class SimpleArchitect extends AbstractArchitect {
      * the need for user interaction (e.g. introduction objects)
      * or objects we wanted to instruct but which were already built by
      * the user.
+     *
      * @return A list of instructions that should be sent to the user
      */
     private List<InstructionTuple> computeNextInstructions() {
@@ -520,9 +436,8 @@ public class SimpleArchitect extends AbstractArchitect {
         }
         var toInstruct = plan.get(0);
         // iterate over all introduction messages we might need
-        if (toInstruct instanceof IntroductionMessage) {
+        if (toInstruct instanceof IntroductionMessage obj) {
             plan.remove(0);
-            IntroductionMessage obj = (IntroductionMessage) toInstruct;
             log(obj.asJson(), "CurrentObject");
             //String message = generateResponse(world, obj.object, it, lastOrientation);
             if (obj.starting) {
@@ -580,7 +495,7 @@ public class SimpleArchitect extends AbstractArchitect {
         log(String.valueOf(System.currentTimeMillis() - t), "RealizerTiming");
         currentInstruction = new InstructionTuple(
                 toInstruct.getVerb() + " " + realizer.treeToReferringExpression(currentTree),
-                currentTree, 
+                currentTree,
                 true
         );
 
@@ -596,12 +511,12 @@ public class SimpleArchitect extends AbstractArchitect {
         if (SecretWordThreadStarted || !config.getShowSecret()) {
             return;
         }
-        boolean timePassed = System.currentTimeMillis() - startTime >= config.getTimeoutMinutes()*60*1000;
-        if (plan.isEmpty() || (numCorrectBlocks >= config.getTimeoutMinBlocks()  && timePassed)) {
+        boolean timePassed = System.currentTimeMillis() - startTime >= (long) config.getTimeoutMinutes() * 60 * 1000;
+        if (plan.isEmpty() || (numCorrectBlocks >= config.getTimeoutMinBlocks() && timePassed)) {
             SecretWordThreadStarted = true;
             new Thread(() -> {
                 while (true) {
-                    logger.info("timeout reached: " + System.currentTimeMillis() + " start: "+startTime);
+                    logger.info("timeout reached: " + System.currentTimeMillis() + " start: " + startTime);
                     if (this.playerHasLeft) {
                         // no player anymore, stop trying to send messages to them
                         break;
@@ -693,7 +608,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 return;
             }
             logger.debug("handleStatusInformation " + request);
-            if(lastUpdate.get() + MESSAGE_PAUSE > java.lang.System.currentTimeMillis()){
+            if (lastUpdate.get() + MESSAGE_PAUSE > java.lang.System.currentTimeMillis()) {
                 return;
             }
             var x = request.getXDirection();
@@ -770,7 +685,7 @@ public class SimpleArchitect extends AbstractArchitect {
         // AFAIK, there is no cleanup we need to do.
     }
 
-    private static String toJson(Collection<MinecraftObject> c) {
+    protected static String toJson(Collection<MinecraftObject> c) {
         return "["
                 + c.stream()
                 .map(MinecraftObject::asJson)

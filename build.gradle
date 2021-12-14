@@ -52,14 +52,14 @@ repositories {
 
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.15.0'
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.15.0'
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.15.0'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.16.0'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.16.0'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.16.0'
     implementation "org.yaml:snakeyaml:1.25"
-    implementation group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: '4d15ddf3665e1705dbc3740fb4567b57bc8f4f09'
-    implementation group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.2.6"
-    implementation group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.6"
-    implementation 'de.saar.minecraft:jshop:1.2.8'
+    implementation group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: 'e6a58b7115f2ee070849ea978717edfa454f0d35'
+    implementation group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.2.7"
+    implementation group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.7"
+    implementation 'de.saar.minecraft:jshop:1.2.9'
     runtimeOnly ('com.github.minecraft-saar:shared-resources') {
 	version {
 	    strictly 'release-1.1.20'
