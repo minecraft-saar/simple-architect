@@ -1,14 +1,12 @@
 package de.saar.minecraft.simplearchitect;
 
 import de.saar.coli.minecraft.relationextractor.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import umd.cs.shop.JSJshop;
 import umd.cs.shop.JSPredicateForm;
 import umd.cs.shop.JSState;
 import umd.cs.shop.JSTerm;
 import umd.cs.shop.costs.CostFunction;
-
+import org.tinylog.Logger;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,9 +17,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class PlanCreator {
-
-    private static final Logger logger = LogManager.getLogger(PlanCreator.class);
-
     protected static InputStream getResourceStream(String resName) {
         return PlanCreator.class.getResourceAsStream(resName);
     }
@@ -85,7 +80,7 @@ public class PlanCreator {
      * @return a plan represented as an s-expression String
      */
     protected String computeJShopPlan(JSJshop planner, String scenario, CostFunction.InstructionLevel instructionLevel) {
-        logger.debug("creating plan for " + scenario);
+        Logger.debug("Creating plan for {}", scenario);
         var initialworld = getResourceStream("/de/saar/minecraft/worlds/" + scenario + ".csv");
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
         String problem = getResourceAsString("/de/saar/minecraft/domains/" + scenario + ".init").strip();
@@ -95,13 +90,13 @@ public class PlanCreator {
     }
 
     protected List<MinecraftObject> computePlan(String scenario) {
-        logger.debug("computing plan");
+        Logger.debug("computing plan");
         JSJshop planner = new JSJshop();
         var jshopPlan = computeJShopPlan(planner, scenario, this.instructionLevel);
 
         world = transformState(planner.prob.state());
         // note which blocks already exist in the world.
-        logger.debug("plan computed");
+        Logger.debug("plan computed");
         return transformPlan(jshopPlan);
     }
 

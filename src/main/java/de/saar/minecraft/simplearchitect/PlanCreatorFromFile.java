@@ -1,16 +1,13 @@
 package de.saar.minecraft.simplearchitect;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import umd.cs.shop.JSJshop;
 import umd.cs.shop.costs.CostFunction;
+import org.tinylog.Logger;
 
 import java.io.*;
 import java.nio.file.Files;
 
 public class PlanCreatorFromFile extends PlanCreator {
-
-    private static final Logger logger = LogManager.getLogger(PlanCreatorFromFile.class);
     protected String planFileName;
 
     public PlanCreatorFromFile(String scenario, String planFileName) {
@@ -21,7 +18,7 @@ public class PlanCreatorFromFile extends PlanCreator {
     }
 
     protected String computeJShopPlan(JSJshop planner, String scenario, CostFunction.InstructionLevel instructionLevel) {
-        logger.debug("creating plan for " + scenario);
+        Logger.debug("creating plan for {}", scenario);
 
         var initialworld = getResourceStream("/de/saar/minecraft/worlds/" + scenario + ".csv");
         var domain = getResourceStream("/de/saar/minecraft/domains/" + scenario + ".lisp");
@@ -30,7 +27,7 @@ public class PlanCreatorFromFile extends PlanCreator {
         try {
             return Files.readString(new File(planFileName).toPath());
         } catch (IOException e) {
-            logger.error("plan file not found: " + planFileName);
+            Logger.error("Plan file not found: {}", planFileName);
             throw new RuntimeException("Plan file not found");
         }
     }

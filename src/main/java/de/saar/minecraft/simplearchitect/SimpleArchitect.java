@@ -13,10 +13,8 @@ import de.saar.minecraft.shared.NewGameState;
 import de.saar.minecraft.shared.StatusMessage;
 import de.saar.minecraft.shared.WorldSelectMessage;
 import de.up.ling.tree.Tree;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.tinylog.Logger;
 import umd.cs.shop.costs.CostFunction;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -63,7 +61,6 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
-    protected static final Logger logger = LogManager.getLogger(SimpleArchitect.class);
     private static final int RESEND_INTERVAL = 11000;
     private static final int MESSAGE_PAUSE = 500;
 
@@ -169,7 +166,7 @@ public class SimpleArchitect extends AbstractArchitect {
     @Override
     public synchronized void playerReady() {
         startTime = java.lang.System.currentTimeMillis();
-        logger.debug("received playerReady");
+        Logger.debug("received playerReady");
         sendMessage("Welcome! I will try to instruct you to build a " + scenario);
         // these information will be given externally.
         // sendMessage("you can move around with w,a,s,d and look around with your mouse.");
@@ -212,7 +209,7 @@ public class SimpleArchitect extends AbstractArchitect {
      */
     @Override
     public synchronized void initialize(WorldSelectMessage message) {
-        logger.debug(() -> "initializing with " + message);
+        Logger.debug("Initializing with {}", message);
         setGameId(message.getGameId());
         scenario = message.getName();
         String instructionlevel = config.getInstructionlevel();
@@ -225,7 +222,7 @@ public class SimpleArchitect extends AbstractArchitect {
         this.plan = planCreator.getPlan();
         this.world = planCreator.getInitialWorld();
         this.alreadyPlacedBlocks = planCreator.getBlocksCurrentWorld();
-        logger.debug("initialization done");
+        Logger.debug("initialization done");
         readyCounter.countDown();
     }
 
@@ -233,7 +230,7 @@ public class SimpleArchitect extends AbstractArchitect {
         List<List<Tree<String>>> result = new ArrayList<>();
         for (String currScenario : List.of("house", "bridge")) {
             for (var il : CostFunction.InstructionLevel.values()) {
-                logger.debug("trying instruction level " + il);
+                Logger.debug("trying instruction level {}", il);
                 var planCreator = new PlanCreator(currScenario, il);
                 result.add(generateSeedInstructionTrees(planCreator));
             }
@@ -263,9 +260,9 @@ public class SimpleArchitect extends AbstractArchitect {
             if (tree != null) {
                 result.add(tree);
             } else {
-                logger.warn("tree is null for object " + mco);
-                logger.warn("world: " + toJson(tmpworld));
-                logger.warn("it: " + toJson(it));
+                Logger.warn("tree is null for object {}", mco);
+                Logger.warn("world: {}", toJson(tmpworld));
+                Logger.warn("it: {}", toJson(it));
             }
 
             tmpworld.add(mco);
@@ -516,7 +513,7 @@ public class SimpleArchitect extends AbstractArchitect {
             SecretWordThreadStarted = true;
             new Thread(() -> {
                 while (true) {
-                    logger.info("timeout reached: " + System.currentTimeMillis() + " start: " + startTime);
+                    Logger.info("timeout reached: {} start: {}", System.currentTimeMillis(),  startTime);
                     if (this.playerHasLeft) {
                         // no player anymore, stop trying to send messages to them
                         break;
@@ -607,7 +604,7 @@ public class SimpleArchitect extends AbstractArchitect {
                 // our information is outdated, so skip this one
                 return;
             }
-            logger.debug("handleStatusInformation " + request);
+            Logger.debug("handleStatusInformation {}", request);
             if (lastUpdate.get() + MESSAGE_PAUSE > java.lang.System.currentTimeMillis()) {
                 return;
             }
@@ -672,7 +669,7 @@ public class SimpleArchitect extends AbstractArchitect {
      * logs the current world state as NLGFailure.
      */
     private void logInstructionGenerationFailure() {
-        logger.warn("Failed to build instruction");
+        Logger.warn("Failed to build instruction");
         log("{\"world\":" + toJson(world)
                         + ", \"target\": " + plan.get(0).asJson()
                         + ", \"it\": " + toJson(it)

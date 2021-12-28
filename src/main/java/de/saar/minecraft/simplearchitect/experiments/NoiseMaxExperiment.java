@@ -9,7 +9,7 @@ import de.saar.minecraft.simplearchitect.PlanCreatorFromFile;
 import de.saar.minecraft.simplearchitect.SimpleArchitect;
 import de.saar.minecraft.simplearchitect.SimpleArchitectConfiguration;
 import umd.cs.shop.costs.CostFunction;
-
+import org.tinylog.Logger;
 import java.util.*;
 
 /**
@@ -82,7 +82,7 @@ public class NoiseMaxExperiment {
          */
         @Override
         public synchronized void initialize(WorldSelectMessage message) {
-            logger.debug(() -> "initializing with " + message);
+            Logger.debug("initializing with {}", message);
             setGameId(message.getGameId());
             scenario = message.getName();
             String instructionlevel = config.getInstructionlevel();
@@ -99,7 +99,7 @@ public class NoiseMaxExperiment {
             this.plan = planCreator.getPlan();
             this.world = planCreator.getInitialWorld();
             this.alreadyPlacedBlocks = planCreator.getBlocksCurrentWorld();
-            logger.debug("initialization done");
+            Logger.debug("initialization done");
             readyCounter.countDown();
         }
 
@@ -107,10 +107,10 @@ public class NoiseMaxExperiment {
             PlanCreator argmin = null;
             double min = Double.POSITIVE_INFINITY;
             for (var il : CostFunction.InstructionLevel.values()) {
-                logger.warn("trying instruction level " + il);
+                Logger.warn("trying instruction level " + il);
                 var planCreator = new PlanCreator(scenario, il);
                 double cost = getCostForPlanCreator(planCreator);
-                logger.warn("cost: " + cost);
+                Logger.warn("cost: " + cost);
                 if (cost < min) {
                     argmin = planCreator;
                     min = cost;
@@ -129,7 +129,7 @@ public class NoiseMaxExperiment {
          * introduction messages are ignored.
          */
         protected double getCostForPlanCreator(PlanCreator planCreator, boolean printInstructions) {
-            logger.debug("computing cost for " + planCreator.getInstructionLevel());
+            Logger.debug("computing cost for {}", planCreator.getInstructionLevel());
             var tmpplan = planCreator.getPlan();
             var tmpworld = planCreator.getInitialWorld();
             double totalCost = 0;
@@ -145,7 +145,7 @@ public class NoiseMaxExperiment {
                     continue;
                 }
                 String currentObjectType = mco.getClass().getSimpleName().toLowerCase();
-                logger.debug("current object " + currentObjectType);
+                Logger.debug("current object {}", currentObjectType);
                 boolean objectFirstOccurence = !knownOjbectTypes.contains(currentObjectType);
                 if (objectFirstOccurence && weights != null) {
                     // temporarily set the weight to the first occurence one
@@ -162,10 +162,10 @@ public class NoiseMaxExperiment {
                     System.out.println(realizer.treeToReferringExpression(tree) + " (" + -realizer.getWeightForTree(tree) + ")");
                 }
                 if (tree == null) {
-                    logger.warn("tree is null in the following context: ");
-                    logger.warn("current target: " + mco);
-                    logger.warn("current world: " + toJson(tmpworld));
-                    logger.warn("it: " + toJson(it));
+                    Logger.warn("tree is null in the following context: ");
+                    Logger.warn("current target: {}", mco);
+                    Logger.warn("current world: {}", toJson(tmpworld));
+                    Logger.warn("it: {}", toJson(it));
                 }
                 totalCost -= realizer.getWeightForTree(tree);
                 tmpworld.add(mco);
