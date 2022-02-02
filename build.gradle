@@ -55,10 +55,10 @@ dependencies {
     implementation 'org.tinylog:tinylog-api:2.4.1'
     implementation 'org.tinylog:tinylog-impl:2.4.1'
     implementation "org.yaml:snakeyaml:1.25"
-    implementation group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: 'e6a58b7115f2ee070849ea978717edfa454f0d35'
-    implementation group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.2.7"
-    implementation group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.7"
-    implementation 'de.saar.minecraft:jshop:1.2.9'
+    implementation group: 'com.github.minecraft-saar', name: 'minecraft-nlg', version: 'f3134e7586c2f641fc74f67ec32039375c71cde0'
+    implementation group: "de.saar.minecraft.infrastructure", name:"networking", version:"1.2.8"
+    implementation group: "de.saar.minecraft.infrastructure", name:"architect", version:"1.2.8"
+    implementation 'de.saar.minecraft:jshop:1.2.10'
     runtimeOnly ('com.github.minecraft-saar:shared-resources') {
 	version {
 	    strictly 'release-1.1.20'
