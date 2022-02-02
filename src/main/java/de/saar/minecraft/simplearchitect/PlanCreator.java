@@ -319,6 +319,10 @@ public class PlanCreator {
                     result.add(createStairs(taskArray));
                     break;
                 case "(!place-block-hidden":
+                case "(!remove-it-row":
+                case "(!remove-it-railing":
+                case "(!remove-it-wall":
+                case "(!remove-it-stairs":
                     break;
                 default:
                     //log(task, "NewAction");
