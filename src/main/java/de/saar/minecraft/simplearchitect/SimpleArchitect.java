@@ -13,6 +13,7 @@ import de.saar.minecraft.shared.NewGameState;
 import de.saar.minecraft.shared.StatusMessage;
 import de.saar.minecraft.shared.WorldSelectMessage;
 import de.up.ling.tree.Tree;
+import org.tinylog.Level;
 import org.tinylog.Logger;
 import umd.cs.shop.costs.CostFunction;
 import java.io.IOException;
@@ -477,7 +478,9 @@ public class SimpleArchitect extends AbstractArchitect {
             return computeNextInstructions();
         }
         var t = System.currentTimeMillis();
-        var currentTree = realizer.generateReferringExpressionTree(world, toInstruct, it, lastOrientation);
+        Set<MinecraftObject> worldLocal = world;
+        worldLocal.addAll(toInstruct.getBlocks());
+        var currentTree = realizer.generateReferringExpressionTree(worldLocal, toInstruct, it, lastOrientation);
 
         if (currentTree == null) {
             // We somehow fail.
