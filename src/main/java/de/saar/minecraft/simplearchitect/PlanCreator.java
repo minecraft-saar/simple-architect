@@ -64,7 +64,7 @@ public class PlanCreator {
         HashSet<Block> alreadyPlacedBlocks = new HashSet<>();
         world.forEach((x) ->
                 x.getBlocks().forEach((block) ->
-                        alreadyPlacedBlocks.add(new Block(block.xpos, block.ypos, block.zpos))
+                        alreadyPlacedBlocks.add(block)
                 )
         );
         return alreadyPlacedBlocks;
@@ -100,7 +100,7 @@ public class PlanCreator {
         return transformPlan(jshopPlan);
     }
 
-    public MinecraftObject createRailing(String[] taskArray) {
+    public MinecraftObject createRailing(String[] taskArray, String type) {
         int x1, x2, y1, z1, z2, length, dir;
         x1 = (int) Double.parseDouble(taskArray[1]);
         y1 = (int) Double.parseDouble(taskArray[2]);
@@ -123,10 +123,10 @@ public class PlanCreator {
             x2 = x1;
             z2 = z1 + length - 1;
         }
-        return new Railing("railing", x1, z1, x2, z2, y1);
+        return new Railing("railing", x1, z1, x2, z2, y1, type);
     }
 
-    public MinecraftObject createWall(String[] taskArray) {
+    public MinecraftObject createWall(String[] taskArray, String type) {
         int x1, x2, y1, y2, z1, z2, length, height, dir;
         x1 = (int) Double.parseDouble(taskArray[1]);
         y1 = (int) Double.parseDouble(taskArray[2]);
@@ -152,10 +152,10 @@ public class PlanCreator {
             z2 = z1 + length - 1;
         }
         y2 = y1 + height - 1;
-        return new Wall("wall", x1, y1, z1, x2, y2, z2);
+        return new Wall("wall", x1, y1, z1, x2, y2, z2, type);
     }
 
-    public MinecraftObject createFloor(String[] taskArray) {
+    public MinecraftObject createFloor(String[] taskArray, String type) {
         int x1, x2, y1, z1, z2, length, width, dir;
         x1 = (int) Double.parseDouble(taskArray[1]);
         y1 = (int) Double.parseDouble(taskArray[2]);
@@ -179,11 +179,11 @@ public class PlanCreator {
             x2 = x1 + length - 1;
             z2 = z1 + width - 1;
         }
-        return new Floor("floor", x1, z1, x2, z2, y1);
+        return new Floor("floor", x1, z1, x2, z2, y1, type);
 
     }
 
-    public MinecraftObject createRow(String[] taskArray){
+    public MinecraftObject createRow(String[] taskArray, String type){
         int x1, y1, z1, x2, z2, length, dir;
         x1 = (int) Double.parseDouble(taskArray[1]);
         y1 = (int) Double.parseDouble(taskArray[2]);
@@ -206,10 +206,10 @@ public class PlanCreator {
             x2 = x1;
             z2 = z1 + length - 1;
         }
-        return new Row("row", x1, z1, x2, z2, y1);
+        return new Row("row", x1, z1, x2, z2, y1, type);
     }
 
-    public MinecraftObject createStairs(String[] taskArray) {
+    public MinecraftObject createStairs(String[] taskArray, String type) {
         int x1, x2, x3, y1, y3, z1, z2, z3, length, width, height, dir;
         x1 = (int) Double.parseDouble(taskArray[1]);
         y1 = (int) Double.parseDouble(taskArray[2]);
@@ -243,11 +243,22 @@ public class PlanCreator {
             x3 = x1 - length + 1;
         }
         y3 = y1 + height -1;
-        return new Stairs( "staircase", x1, y1, z1, x2, z2, x3, y3, z3);
+        return new Stairs( "staircase", x1, y1, z1, x2, z2, x3, y3, z3, type);
+    }
+
+    public MinecraftObject createPillar(String[] taskArray, String type) {
+        int x = (int) Double.parseDouble(taskArray[1]);
+        int y = (int) Double.parseDouble(taskArray[2]);
+        int z = (int) Double.parseDouble(taskArray[3]);
+        int height = (int) Double.parseDouble(taskArray[4]);
+
+        return new Pillar(x, y, z, height, type);
     }
 
     public List<MinecraftObject> transformPlan(String jshopPlan) {
         var result = new ArrayList<MinecraftObject>();
+        String currentType = "stone"; //TODO: parse from initial state
+
         String[] tasks = jshopPlan.split("\n");
         for (String task : tasks) {
             //t = (JSTaskAtom) jshopPlan.elementAt(i);
@@ -258,65 +269,71 @@ public class PlanCreator {
             // boolean inst = false;
             switch (taskArray[0]) {
                 case "(!place-block":
-                    x1 = (int) Double.parseDouble(taskArray[2]);
-                    y1 = (int) Double.parseDouble(taskArray[3]);
-                    z1 = (int) Double.parseDouble(taskArray[4]);
-                    result.add(new Block(x1, y1, z1));
+                    x1 = (int) Double.parseDouble(taskArray[1]);
+                    y1 = (int) Double.parseDouble(taskArray[2]);
+                    z1 = (int) Double.parseDouble(taskArray[3]);
+                    result.add(new Block(x1, y1, z1, currentType));
+                    break;
+                case "(!use_block_type":
+                    currentType = taskArray[1].toLowerCase();
                     break;
                 case "(!build-row":
-                    result.add(createRow(taskArray));
+                    result.add(createRow(taskArray, currentType));
                     break;
                 case "(!build-row-starting":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createRow(taskArray), true, "row"));
+                        result.add(new IntroductionMessage(createRow(taskArray, currentType), true, "row"));
                     break;
                 case "(!build-row-finished":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createRow(taskArray), false, "row"));
+                        result.add(new IntroductionMessage(createRow(taskArray, currentType), false, "row"));
                     break;
                 case "(!build-wall-starting":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createWall(taskArray), true, "wall"));
+                        result.add(new IntroductionMessage(createWall(taskArray, currentType), true, "wall"));
                     break;
                 case "(!build-wall-finished":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createWall(taskArray), false, "wall"));
+                        result.add(new IntroductionMessage(createWall(taskArray, currentType), false, "wall"));
                     break;
                 case "(!build-wall":
-                    result.add(createWall(taskArray));
+                    result.add(createWall(taskArray, currentType));
                     break;
                 case "(!build-railing-starting":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createRailing(taskArray), true, "railing"));
+                        result.add(new IntroductionMessage(createRailing(taskArray, currentType), true, "railing"));
                     break;
                 case "(!build-railing-finished":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createRailing(taskArray), false, "railing"));
+                        result.add(new IntroductionMessage(createRailing(taskArray, currentType), false, "railing"));
                     break;
                 case "(!build-railing":
-                    result.add(createRailing(taskArray));
+                    result.add(createRailing(taskArray, currentType));
                     break;
                 case "(!build-floor-starting":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createFloor(taskArray), true, "floor"));
+                        result.add(new IntroductionMessage(createFloor(taskArray, currentType), true, "floor"));
                     break;
                 case "(!build-floor-finished":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createFloor(taskArray), false, "floor"));
+                        result.add(new IntroductionMessage(createFloor(taskArray, currentType), false, "floor"));
                     break;
                 case "(!build-floor":
-                    result.add(createFloor(taskArray));
+                    result.add(createFloor(taskArray, currentType));
                     break;
                 case "(!build-stairs-starting":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createStairs(taskArray), true, "staircase"));
+                        result.add(new IntroductionMessage(createStairs(taskArray, currentType), true, "staircase"));
                     break;
                 case "(!build-stairs-finished":
                     if (instructionLevel != CostFunction.InstructionLevel.BLOCK)
-                        result.add(new IntroductionMessage(createStairs(taskArray), false, "staircase"));
+                        result.add(new IntroductionMessage(createStairs(taskArray, currentType), false, "staircase"));
+                    break;
+                case "(!build-pillar":
+                    result.add(createPillar(taskArray, currentType));
                     break;
                 case "(!build-stairs":
-                    result.add(createStairs(taskArray));
+                    result.add(createStairs(taskArray, currentType));
                     break;
                 case "(!place-block-hidden":
                     break;
@@ -352,7 +369,7 @@ public class PlanCreator {
             tmp = (JSTerm) term.elementAt(4);
             int z = (int) Double.parseDouble(tmp.toStr().toString());
             //System.out.println("Block: " + type + " " + x + " " + y + " "+ z);
-            set.add(new UniqueBlock(type, x, y, z));
+            set.add(new Block(x, y, z, type));
         }
         return set;
     }

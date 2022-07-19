@@ -2,6 +2,7 @@ package de.saar.minecraft.simplearchitect;
 
 import de.saar.coli.minecraft.MinecraftRealizer;
 import de.saar.coli.minecraft.relationextractor.Block;
+import de.saar.coli.minecraft.relationextractor.WildcardBlock;
 import de.saar.coli.minecraft.relationextractor.MinecraftObject;
 import de.saar.coli.minecraft.relationextractor.IntroductionMessage;
 import de.saar.coli.minecraft.relationextractor.Relation.Orientation;
@@ -69,6 +70,8 @@ public class SimpleArchitect extends AbstractArchitect {
     protected HashSet<MinecraftObject> it = new HashSet<>();
     protected List<MinecraftObject> plan;
     private Set<Block> currentInstructionBlocksLeft = Set.of();
+    private Map<String, Integer> typeAmounts = new HashMap<>();
+    private Map<String, Block> uniqueBlocks = new HashMap<>();
     protected Set<MinecraftObject> world;
     protected MinecraftRealizer realizer;
     protected AtomicInteger numBlocksPlaced = new AtomicInteger(0);
@@ -81,6 +84,7 @@ public class SimpleArchitect extends AbstractArchitect {
     private long startTime;
     private boolean SecretWordThreadStarted = false;
     private int numCorrectBlocks = 0;
+    private int buildBlockType = 1; // stone
     public WeightEstimator.WeightResult weights;
 
     protected final SimpleArchitectConfiguration config;
@@ -163,6 +167,54 @@ public class SimpleArchitect extends AbstractArchitect {
         }
     }
 
+    private void addPlacedBlock(Block block) {
+        alreadyPlacedBlocks.add(block);
+        
+        String type = block.getType();
+        Logger.debug("Placed {} block in architect world.", type);
+        if (!typeAmounts.containsKey(type)) {
+            typeAmounts.put(type, 0);
+        }
+        if (typeAmounts.get(type) == 0) {
+            Logger.debug("Determined unique {} block in architect world.", type);
+            uniqueBlocks.put(type, block);
+            block.setUnique();
+        } else if (typeAmounts.get(type) == 1) {
+            Logger.debug("There is no longer a unique {} block in architect world.", type);
+            uniqueBlocks.get(type).setNotUnique();
+            uniqueBlocks.remove(type);
+        }
+        typeAmounts.put(type, typeAmounts.get(type) + 1);
+    }
+
+    private void removePlacedBlock(Block block) {
+        alreadyPlacedBlocks.remove(block);
+
+        String type = block.getType();
+        if (!typeAmounts.containsKey(type)) {
+            typeAmounts.put(type, 0);
+        }
+        if (typeAmounts.get(type) == 2) {
+            //TODO: there would be a better implementation if we store all blocks by type, but this shouldn't be triggered often
+            Block typedBlock = null;
+            for (Block placedBlock : alreadyPlacedBlocks) {
+                if (placedBlock.getType().equals(type)) {
+                    typedBlock = placedBlock;
+                    break;
+                }
+            }
+            assert typedBlock != null;
+            uniqueBlocks.put(type, typedBlock);
+            Logger.debug("Determined unique {} block in architect world.", type);
+            typedBlock.setUnique();
+        } else if (typeAmounts.get(type) == 1) {
+            Logger.debug("There is no longer a unique {} block in architect world.", type);
+            uniqueBlocks.get(type).setNotUnique();
+            uniqueBlocks.remove(type);
+        }
+        typeAmounts.put(type, typeAmounts.get(type) - 1);
+    }
+
     @Override
     public synchronized void playerReady() {
         startTime = java.lang.System.currentTimeMillis();
@@ -221,7 +273,9 @@ public class SimpleArchitect extends AbstractArchitect {
         }
         this.plan = planCreator.getPlan();
         this.world = planCreator.getInitialWorld();
-        this.alreadyPlacedBlocks = planCreator.getBlocksCurrentWorld();
+        for (Block block : planCreator.getBlocksCurrentWorld()) {
+            addPlacedBlock(block);
+        }
         Logger.debug("initialization done");
         readyCounter.countDown();
     }
@@ -286,8 +340,11 @@ public class SimpleArchitect extends AbstractArchitect {
             int x = request.getX();
             int y = request.getY();
             int z = request.getZ();
-            var blockPlaced = new Block(x, y, z);
-            world.add(blockPlaced);
+            String type = request.getType().toLowerCase(); 
+            String replType = request.getReplType().toLowerCase(); 
+
+            var blockPlaced = new Block(x, y, z, type); // the block the user placed, tracked by the plan generation
+            var blockGenerated = new Block(x, y, z, replType); // the replacement block (for a correct block), that will be part of the actual world
             if (plan.isEmpty()) {
                 sendMessage("you are done, no more changes needed!");
                 return;
@@ -300,18 +357,18 @@ public class SimpleArchitect extends AbstractArchitect {
              */
             // current object is complete
             // ID for Stone Bricks
-            String correctBlockType = "STONE_BRICKS";
             if (currentInstructionBlocksLeft.size() == 1 && currentInstructionBlocksLeft.contains(blockPlaced)) {
+                world.add(blockGenerated);
                 numCorrectBlocks += 1;
                 world.add(plan.get(0));
-                alreadyPlacedBlocks.add(blockPlaced);
-                //send message to protect this block since it is correct and change type to ID stored in correctBlockType
-                sendControlMessage(blockPlaced.xpos, blockPlaced.ypos, blockPlaced.zpos, correctBlockType);
+                addPlacedBlock(blockGenerated);
+                //send message to protect this block since it is correct
+                sendControlMessage(blockPlaced.xpos, blockPlaced.ypos, blockPlaced.zpos, blockPlaced.getType());
                 // we can refer to the HLO and the block as it.
                 // remove all blocks because we add a new block
                 // remove all objects of the type we just finished because we add that one.
                 it.removeIf((elem) -> elem instanceof Block || elem.getClass().equals(plan.get(0).getClass()));
-                it.add(blockPlaced);
+                it.add(blockPlaced); //TODO: this looks fishy
                 it.add(plan.get(0));
                 plan.remove(0);
                 updateInstructions();
@@ -323,24 +380,31 @@ public class SimpleArchitect extends AbstractArchitect {
                 return;
             } // end current objective is complete
             if (currentInstructionBlocksLeft.contains(blockPlaced)) {
+                world.add(blockGenerated);
                 // second case:
                 // correct block, but objective not complete
                 // Just note and do nothing for now
                 numCorrectBlocks += 1;
                 currentInstructionBlocksLeft.remove(blockPlaced);
-                alreadyPlacedBlocks.add(blockPlaced);
-                sendControlMessage(blockPlaced.xpos, blockPlaced.ypos, blockPlaced.zpos, correctBlockType);
+                addPlacedBlock(blockGenerated);
+                sendControlMessage(blockPlaced.xpos, blockPlaced.ypos, blockPlaced.zpos, blockPlaced.getType());
                 // We are in the middle of an ongoing instruction.
                 // Therefore, we still use the reference frame from the
                 // start of the interaction and do not update "it".
                 // it = Set.of(blockPlaced);
             } else {
+                world.add(blockPlaced);
                 // third case: incorrect block
                 incorrectlyPlacedBlocks.add(blockPlaced);
-                alreadyPlacedBlocks.add(blockPlaced);
+                addPlacedBlock(blockPlaced);
                 lastUpdate.set(java.lang.System.currentTimeMillis());
                 sendMessageSpaces();
-                sendMessage("Not there! please remove that block again and " + currentInstruction.instruction);
+                if (currentInstructionBlocksLeft.contains(new WildcardBlock(blockPlaced.xpos, blockPlaced.ypos, blockPlaced.zpos))) {
+                    sendMessage("Wrong block type! please remove that block again and " + currentInstruction.instruction);
+                } else {
+                    sendMessage("Not there! please remove that block again and " + currentInstruction.instruction);
+
+                }
                 sendMessageSpaces();
                 it.removeIf((elem) -> elem instanceof Block);
                 it.add(blockPlaced);
@@ -535,13 +599,13 @@ public class SimpleArchitect extends AbstractArchitect {
         int x = request.getX();
         int y = request.getY();
         int z = request.getZ();
-        var block = new Block(x, y, z);
+        var block = new WildcardBlock(x, y, z);
         world.remove(block);
         // We instructed the user to remove the block,
         // so simply remove it from our list.
         if (incorrectlyPlacedBlocks.contains(block)) {
             it.removeIf((elem) -> elem instanceof Block);
-            alreadyPlacedBlocks.remove(block);
+            removePlacedBlock(block);
             // We are in this situation: We gave an instruction to the user,
             // the user placed a block incorrectly, now corrected that error.
             // Therefore, computing the next instructions should give us exactly
