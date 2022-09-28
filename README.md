@@ -1,10 +1,9 @@
 An architect performing offline planning and real-time NLG.
 
-The behaviour is configured with a config file; an example
-is the `architect-config.yaml` file, which is also read by default.
+The behaviour is configured with a config file; a set of example configurations can be found in the configs folder.
 
-You can use a different config file by supplying it as the first argument.
-You can additionally modify the port via the second argument (which
+The config file must be supplied as the first argument.
+You can additionally modify the port (used for connection with the broker) via the second argument (which
 takes precedence over the port configured in the config file).
 
 ## running the architect server
